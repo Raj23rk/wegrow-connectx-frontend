@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { Search, Sun, Moon, LogOut, Check, ChevronDown, User, ShieldCheck } from 'lucide-react';
+import logoImg from '../../images/wegrow&Bschool.webp';
 
 const STATUS_OPTIONS = [
   { id: 'available', label: 'Available', color: '#6BB700' },
@@ -54,9 +55,7 @@ export const TopBar = () => {
       {/* Brand & Logo */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#0A2A8C] to-[#FF6A13] flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
-            WX
-          </div>
+          <img src={logoImg} alt="WeGrow & BSchool" className="h-7 w-auto object-contain rounded bg-white px-1 shadow-xs" />
           <span className="font-extrabold text-sm tracking-tight text-gray-900 dark:text-white hidden sm:inline-block">
             WeGrow <span className="text-[#FF6A13]">ConnectX</span>
           </span>

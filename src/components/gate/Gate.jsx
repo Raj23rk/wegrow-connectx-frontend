@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { CheckCircle2, Eye, EyeOff, Sparkles, Shield, ArrowRight, Building2, Users2, Layers, MessageSquare, Calendar, FolderGit2 } from 'lucide-react';
+import mascotImg from '../../images/mascot.webp';
+import logoImg from '../../images/wegrow&Bschool.webp';
 
 export const Gate = () => {
   const { login, register, demoAccounts } = useAuth();
@@ -9,18 +11,6 @@ export const Gate = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [branchFilter, setBranchFilter] = useState('all');
-
-  const defaultStaffList = [
-    { name: 'Dr.Thavabalan P', email: 'dr.thavabalan@gmail.com', title: 'Managing Director', role: 'MD', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#6A1B9A', demoPassword: 'WG@Tha7!Nx58' },
-    { name: 'Dr.Lakshmipriya', email: 'lakshmipriya@psr.edu.in', title: 'General Manager / Management', role: 'GM', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#2E7D32', demoPassword: 'WG@Lak5$Rt39' },
-    { name: 'GOPINATH C', email: 'srisaigopi31@gmail.com', title: 'HR Manager', role: 'HR_MANAGER', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#C2185B', demoPassword: '12345678' },
-    { name: 'Ashokkumar M', email: 'ak45ashokkumar@gmail.com', title: 'Incharger', role: 'ADMIN', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#0A2A8C', demoPassword: 'WG@Aka5#Rx93' },
-    { name: 'Rajkumar A', email: 'kumarrk23dev@gmail.com', title: 'Manager - Software Developer', role: 'MANAGER', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#1E88E5', demoPassword: 'Raj@2310' },
-    { name: 'Vijayakumar M', email: 'vijay909232@gmail.com', title: 'Software Developer', role: 'EMPLOYEE', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#039BE5', demoPassword: 'Vijay@2004' },
-    { name: 'Ajith kumar', email: 'ajithkumar.bba.anjac@gmail.com', title: 'Manager', role: 'MANAGER', branch: 'WeGrow Skill Campus – Sivakasi Branch 1.0', color: '#1565C0', demoPassword: 'WG@Aji4#Qx82' },
-    { name: 'VIGNESH A', email: 'mfvat.vicky@gmail.com', title: 'Branch Manager', role: 'MANAGER', branch: 'WeGrow Skill Campus – Srivilliputhur Branch 2.0', color: '#3949AB', demoPassword: 'WG@Mfv7#Rt42' },
-    { name: 'ConnectX Admin', email: 'admin@wegrow.in', title: 'Platform Administrator', role: 'ADMIN', branch: 'WeGrow Corporate HQ', color: '#0A2A8C', demoPassword: 'Admin@123' }
-  ];
 
   // Form states
   const [email, setEmail] = useState('');
@@ -80,19 +70,15 @@ export const Gate = () => {
   return (
     <div className="h-full w-full grid grid-cols-1 lg:grid-cols-12 overflow-y-auto bg-[#F4F6FB] dark:bg-[#151515]">
       {/* Hero Left Panel */}
-      <div className="lg:col-span-7 relative overflow-hidden bg-gradient-to-br from-[#0C2F9A] via-[#0A2A8C] to-[#061B5C] p-8 md:p-12 lg:p-16 text-white flex flex-col justify-between min-h-[480px]">
+      <div className="lg:col-span-7 relative overflow-hidden bg-gradient-to-br from-[#0C2F9A] via-[#0A2A8C] to-[#061B5C] p-8 md:p-12 lg:p-16 text-white flex flex-col justify-between min-h-[520px]">
         {/* Glow circles */}
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl pointer-events-none"></div>
         <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-orange-500/20 blur-3xl pointer-events-none"></div>
 
-        {/* Brand header */}
-        <div className="relative z-10">
+        {/* Brand header with Logo */}
+        <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-white shadow-md flex items-center justify-center p-1.5 flex-none">
-              <div className="w-full h-full rounded-lg bg-gradient-to-tr from-[#0A2A8C] to-[#FF6A13] flex items-center justify-center text-white font-extrabold text-sm tracking-wider">
-                WX
-              </div>
-            </div>
+            <img src={logoImg} alt="WeGrow & BSchool" className="h-10 w-auto object-contain bg-white/95 px-3 py-1 rounded-xl shadow-md" />
             <div>
               <span className="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
                 WeGrow <span className="text-[#FF8A3D]">ConnectX</span>
@@ -104,8 +90,22 @@ export const Gate = () => {
           </div>
         </div>
 
+        {/* Mascot with Speech Bubble */}
+        <div className="hidden lg:block absolute right-0 bottom-0 pointer-events-none z-10 w-64 xl:w-80 select-none">
+          <div className="relative">
+            <div className="absolute -top-12 left-4 bg-white text-[#0A2A8C] font-extrabold text-xs px-3.5 py-2 rounded-2xl shadow-xl border border-blue-100 flex items-center gap-1.5">
+              <span>Welcome back! Let's grow together 👋</span>
+            </div>
+            <img
+              src={mascotImg}
+              alt="WeGrow Mascot"
+              className="w-full h-auto object-contain filter drop-shadow-2xl"
+            />
+          </div>
+        </div>
+
         {/* Value Proposition */}
-        <div className="relative z-10 my-auto py-8 max-w-xl">
+        <div className="relative z-10 my-auto py-8 max-w-lg">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-orange-200 mb-6">
             <Sparkles className="w-3.5 h-3.5 text-[#FF8A3D]" />
             Unified Workspace for All 3 Brands
@@ -113,49 +113,49 @@ export const Gate = () => {
           <h1 className="text-3xl md:text-5xl font-extrabold leading-[1.15] tracking-tight mb-4 text-white">
             Where our teams <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF8A3D] to-amber-300">connect</span>, learn and grow.
           </h1>
-          <p className="text-base md:text-lg text-blue-100/80 mb-8 leading-relaxed">
+          <p className="text-base text-blue-100/80 mb-8 leading-relaxed max-w-md">
             Team channels, private chats, real-time meetings, unified calendar, and organization files for everyone at WeGrow, SkillCampus, and BSchool.
           </p>
 
           {/* Features grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-3">
-              <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
+          <div className="grid grid-cols-2 gap-3 max-w-md">
+            <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
                 <MessageSquare className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-sm text-white">Channels & Threads</div>
-                <div className="text-xs text-blue-200/70">Topic-based posts & reactions</div>
+                <div className="font-bold text-xs text-white">Channels & Threads</div>
+                <div className="text-[10px] text-blue-200/70">Posts & reactions</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-3">
-              <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
+            <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-sm text-white">Smart Calendar</div>
-                <div className="text-xs text-blue-200/70">Meetings, RSVPs & links</div>
+                <div className="font-bold text-xs text-white">Smart Calendar</div>
+                <div className="text-[10px] text-blue-200/70">Meetings & RSVPs</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-3">
-              <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
+            <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
                 <Users2 className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-sm text-white">People Directory</div>
-                <div className="text-xs text-blue-200/70">Status, profiles & quick DMs</div>
+                <div className="font-bold text-xs text-white">People Directory</div>
+                <div className="text-[10px] text-blue-200/70">Live status & quick DMs</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-3">
-              <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
+            <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl p-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-blue-200 flex-none">
                 <FolderGit2 className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-sm text-white">Centralized Files</div>
-                <div className="text-xs text-blue-200/70">Company-wide asset sharing</div>
+                <div className="font-bold text-xs text-white">Centralized Files</div>
+                <div className="text-[10px] text-blue-200/70">Asset sharing</div>
               </div>
             </div>
           </div>
@@ -179,22 +179,23 @@ export const Gate = () => {
       {/* Auth Card Right Panel */}
       <div className="lg:col-span-5 flex flex-col justify-center items-center p-6 md:p-10 lg:p-12">
         <div className="w-full max-w-md bg-white dark:bg-[#242424] rounded-2xl shadow-xl dark:shadow-2xl border border-gray-100 dark:border-gray-800 p-8">
-          {/* Header */}
-          <div className="mb-6 text-center">
+          {/* Header with Logo */}
+          <div className="mb-5 text-center">
+            <img src={logoImg} alt="WeGrow & BSchool Logo" className="h-11 w-auto mx-auto mb-3 object-contain" />
             <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               {isRegister ? 'Join WeGrow ConnectX' : 'Welcome Back'}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {isRegister ? 'Create your employee account' : 'Sign in to your workplace account'}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {isRegister ? 'Create your employee account' : 'Sign in with your company credentials'}
             </p>
           </div>
 
           {/* Tab Selector */}
-          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-5">
             <button
               type="button"
               onClick={() => { setIsRegister(false); setError(''); }}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
                 !isRegister
                   ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
@@ -205,7 +206,7 @@ export const Gate = () => {
             <button
               type="button"
               onClick={() => { setIsRegister(true); setError(''); }}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
                 isRegister
                   ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
@@ -222,7 +223,7 @@ export const Gate = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             {isRegister && (
               <>
                 <div>
@@ -332,14 +333,14 @@ export const Gate = () => {
           </form>
 
           {/* Quick 1-Click Staff Login Selector */}
-          {!isRegister && (
-            <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
+          {!isRegister && demoAccounts.length > 0 && (
+            <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
                   <span className="text-orange-500">⚡</span> 1-Click Staff Sign-In
                 </span>
                 <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
-                  {demoAccounts.length || 24} staff accounts
+                  {demoAccounts.length} staff accounts
                 </span>
               </div>
 
@@ -363,7 +364,7 @@ export const Gate = () => {
 
               {/* Staff grid */}
               <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
-                {(demoAccounts.length ? demoAccounts : defaultStaffList)
+                {demoAccounts
                   .filter(acc => {
                     if (branchFilter === 'all') return true;
                     return acc.branch?.includes(branchFilter);
@@ -372,9 +373,9 @@ export const Gate = () => {
                     <button
                       type="button"
                       key={acc._id || acc.email}
-                      onClick={() => handleDemoLogin(acc.email, acc.demoPassword || acc.password || 'Vijay@2004')}
+                      onClick={() => handleDemoLogin(acc.email, acc.demoPassword || 'Vijay@2004')}
                       className="flex items-center gap-2 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-left transition-all group"
-                      title={`Login as ${acc.name} (${acc.title || acc.role})`}
+                      title={`Login as ${acc.name} (${acc.title || acc.designation || acc.role})`}
                     >
                       <div
                         className="w-7 h-7 rounded-full text-white flex items-center justify-center text-[10px] font-bold flex-none shadow-xs"
