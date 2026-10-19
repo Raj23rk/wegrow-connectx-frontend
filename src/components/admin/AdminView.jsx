@@ -214,6 +214,7 @@ export const AdminView = () => {
               <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50/75 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400 font-bold">
                 <th className="py-3 px-4">User</th>
                 <th className="py-3 px-4">Role</th>
+                <th className="py-3 px-4">Branch & Contact</th>
                 <th className="py-3 px-4">Department & Title</th>
                 <th className="py-3 px-4">Brands</th>
                 <th className="py-3 px-4">Status</th>
@@ -232,7 +233,10 @@ export const AdminView = () => {
                         {u.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-bold text-gray-900 dark:text-white">{u.name}</div>
+                        <div className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                          {u.name}
+                          {u.empId && <span className="text-[10px] font-mono text-gray-400 font-normal">({u.empId})</span>}
+                        </div>
                         <div className="text-[11px] text-gray-400">{u.email}</div>
                       </div>
                     </div>
@@ -247,6 +251,11 @@ export const AdminView = () => {
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
                     </select>
+                  </td>
+
+                  <td className="py-3 px-4">
+                    <div className="font-semibold text-gray-800 dark:text-gray-200">{u.branch || 'Corporate HQ'}</div>
+                    {u.phone && <div className="text-[11px] font-mono text-emerald-600">{u.phone}</div>}
                   </td>
 
                   <td className="py-3 px-4">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, MessageSquare, Video, Briefcase, Building, X, Shield, Calendar } from 'lucide-react';
+import { Mail, MessageSquare, Video, Briefcase, Building, X, Shield, Calendar, Phone, MapPin } from 'lucide-react';
 
 export const ProfileModal = () => {
   const { selectedUserForProfile, setSelectedUserForProfile, startOrGetDirectChat, setIsNewMeetingOpen } = useApp();
@@ -98,10 +98,30 @@ export const ProfileModal = () => {
               <Mail className="w-4 h-4 text-gray-400 flex-none" />
               <span className="truncate">{p.email}</span>
             </div>
+            {p.phone && (
+              <div className="flex items-center gap-2.5">
+                <Phone className="w-4 h-4 text-emerald-600 flex-none" />
+                <a href={`tel:${p.phone}`} className="hover:underline font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
+                  {p.phone}
+                </a>
+              </div>
+            )}
+            {p.branch && (
+              <div className="flex items-center gap-2.5">
+                <MapPin className="w-4 h-4 text-red-500 flex-none" />
+                <span className="font-medium text-gray-700 dark:text-gray-300">{p.branch}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2.5">
               <Building className="w-4 h-4 text-gray-400 flex-none" />
               <span>{p.department || 'General Team'}</span>
             </div>
+            {p.dateOfJoining && (
+              <div className="flex items-center gap-2.5 text-gray-400">
+                <Calendar className="w-4 h-4 flex-none" />
+                <span>Joined: {p.dateOfJoining}</span>
+              </div>
+            )}
           </div>
 
           {/* Brand Access Badges */}

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { User as UserIcon, Search, MessageSquare, Video, Mail, Briefcase, Filter, Sparkles } from 'lucide-react';
+import { User as UserIcon, Search, MessageSquare, Video, Mail, Briefcase, Filter, Sparkles, Phone, Building2, MapPin, ShieldCheck } from 'lucide-react';
 
 export const PeopleView = () => {
   const { people, startOrGetDirectChat, setSelectedUserForProfile, setIsNewMeetingOpen } = useApp();
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
+  const [selectedBranch, setSelectedBranch] = useState('all');
   const [selectedDept, setSelectedDept] = useState('all');
 
+  const branches = ['all', 'Sivakasi Branch 3.0', 'Sivakasi Branch 1.0', 'Srivilliputhur Branch 2.0'];
   const departments = ['all', ...Array.from(new Set(people.map(p => p.department).filter(Boolean)))];
 
   const filteredPeople = people.filter(p => {
@@ -18,12 +20,15 @@ export const PeopleView = () => {
       p.email?.toLowerCase().includes(search.toLowerCase()) ||
       p.title?.toLowerCase().includes(search.toLowerCase()) ||
       p.department?.toLowerCase().includes(search.toLowerCase()) ||
+      p.branch?.toLowerCase().includes(search.toLowerCase()) ||
+      p.phone?.toLowerCase().includes(search.toLowerCase()) ||
       p.empId?.toLowerCase().includes(search.toLowerCase());
 
     const matchesBrand = selectedBrand === 'all' || p.brands?.includes(selectedBrand);
+    const matchesBranch = selectedBranch === 'all' || p.branch?.includes(selectedBranch);
     const matchesDept = selectedDept === 'all' || p.department?.toLowerCase() === selectedDept.toLowerCase();
 
-    return matchesSearch && matchesBrand && matchesDept;
+    return matchesSearch && matchesBrand && matchesBranch && matchesDept;
   });
 
   const getStatusColor = (status) => {
@@ -37,6 +42,16 @@ export const PeopleView = () => {
     }
   };
 
+  const getRoleBadge = (role, staffRole) => {
+    const r = staffRole || role;
+    if (r === 'MD') return { label: 'MD', bg: 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300' };
+    if (r === 'GM') return { label: 'GM', bg: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' };
+    if (r === 'HR_MANAGER') return { label: 'HR Manager', bg: 'bg-pink-100 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300' };
+    if (r === 'MANAGER') return { label: 'Manager', bg: 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300' };
+    if (r === 'ADMIN') return { label: 'Admin / Incharge', bg: 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300' };
+    return { label: 'Staff', bg: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400' };
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#F5F5F5] dark:bg-[#1E1E1E] min-w-0 overflow-hidden select-none">
       {/* Header */}
@@ -47,7 +62,7 @@ export const PeopleView = () => {
           </div>
           <div>
             <h1 className="font-extrabold text-sm md:text-base text-gray-900 dark:text-white">
-              People & Organization Directory
+              WeGrow Staff Directory
             </h1>
           </div>
         </div>
@@ -57,14 +72,14 @@ export const PeopleView = () => {
       </header>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 md:px-6 bg-white dark:bg-[#252525] border-b border-gray-200/80 dark:border-gray-800 space-y-3">
+      <div className="p-4 md:px-6 bg-white dark:bg-[#252525] border-b border-gray-200/80 dark:border-gray-800 space-y-2.5">
         <div className="flex items-center gap-3 flex-wrap">
           {/* Search Input */}
           <div className="relative flex-1 max-w-md">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, title, department or ID..."
+              placeholder="Search by name, title, branch, phone, or ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -81,7 +96,7 @@ export const PeopleView = () => {
                 onClick={() => setSelectedBrand(b)}
                 className={`px-2.5 py-1 rounded-lg font-bold capitalize transition-all ${
                   selectedBrand === b
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-[#0A2A8C] text-white shadow-xs'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900'
                 }`}
               >
@@ -91,24 +106,24 @@ export const PeopleView = () => {
           </div>
         </div>
 
-        {/* Department Filters */}
+        {/* Branch Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           <span className="text-gray-400 font-semibold mr-1 flex items-center gap-1">
-            <Filter className="w-3 h-3" />
-            Dept:
+            <MapPin className="w-3 h-3 text-red-500" />
+            Branch:
           </span>
-          {departments.map(dept => (
+          {branches.map(br => (
             <button
               type="button"
-              key={dept}
-              onClick={() => setSelectedDept(dept)}
-              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap capitalize transition-all ${
-                selectedDept === dept
-                  ? 'bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 font-bold'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900'
+              key={br}
+              onClick={() => setSelectedBranch(br)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all ${
+                selectedBranch === br
+                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900'
               }`}
             >
-              {dept}
+              {br === 'all' ? 'All Branches' : br}
             </button>
           ))}
         </div>
@@ -125,6 +140,7 @@ export const PeopleView = () => {
             {filteredPeople.map(p => {
               const isCurrentUser = p._id === user?._id;
               const statusColor = getStatusColor(p.status);
+              const badge = getRoleBadge(p.role, p.staffRole);
 
               return (
                 <div
@@ -148,11 +164,16 @@ export const PeopleView = () => {
                         ></span>
                       </div>
 
-                      {p.empId && (
-                        <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700/60 text-[10px] font-mono text-gray-500 dark:text-gray-400 font-bold">
-                          {p.empId}
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${badge.bg}`}>
+                          {badge.label}
                         </span>
-                      )}
+                        {p.empId && (
+                          <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 font-bold">
+                            {p.empId}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <button
@@ -162,8 +183,25 @@ export const PeopleView = () => {
                     >
                       {p.name} {isCurrentUser && <span className="text-[10px] text-blue-500 font-normal">(You)</span>}
                     </button>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{p.title}</div>
+                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 truncate mt-0.5">{p.title}</div>
                     <div className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{p.department}</div>
+
+                    {/* Branch & Contact Info */}
+                    {p.branch && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 mt-2 bg-gray-50 dark:bg-gray-800/60 px-2 py-1 rounded-lg">
+                        <Building2 className="w-3 h-3 text-gray-400 flex-none" />
+                        <span className="truncate font-medium">{p.branch}</span>
+                      </div>
+                    )}
+
+                    {p.phone && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 mt-1 px-2">
+                        <Phone className="w-3 h-3 text-emerald-600 flex-none" />
+                        <a href={`tel:${p.phone}`} className="hover:underline font-mono text-emerald-700 dark:text-emerald-400">
+                          {p.phone}
+                        </a>
+                      </div>
+                    )}
 
                     {/* Status note */}
                     {p.statusMessage && (

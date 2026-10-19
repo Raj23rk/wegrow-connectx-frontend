@@ -8,6 +8,19 @@ export const Gate = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [branchFilter, setBranchFilter] = useState('all');
+
+  const defaultStaffList = [
+    { name: 'Dr.Thavabalan P', email: 'dr.thavabalan@gmail.com', title: 'Managing Director', role: 'MD', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#6A1B9A', demoPassword: 'WG@Tha7!Nx58' },
+    { name: 'Dr.Lakshmipriya', email: 'lakshmipriya@psr.edu.in', title: 'General Manager / Management', role: 'GM', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#2E7D32', demoPassword: 'WG@Lak5$Rt39' },
+    { name: 'GOPINATH C', email: 'srisaigopi31@gmail.com', title: 'HR Manager', role: 'HR_MANAGER', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#C2185B', demoPassword: '12345678' },
+    { name: 'Ashokkumar M', email: 'ak45ashokkumar@gmail.com', title: 'Incharger', role: 'ADMIN', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#0A2A8C', demoPassword: 'WG@Aka5#Rx93' },
+    { name: 'Rajkumar A', email: 'kumarrk23dev@gmail.com', title: 'Manager - Software Developer', role: 'MANAGER', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#1E88E5', demoPassword: 'Raj@2310' },
+    { name: 'Vijayakumar M', email: 'vijay909232@gmail.com', title: 'Software Developer', role: 'EMPLOYEE', branch: 'WeGrow B School – Sivakasi Branch 3.0', color: '#039BE5', demoPassword: 'Vijay@2004' },
+    { name: 'Ajith kumar', email: 'ajithkumar.bba.anjac@gmail.com', title: 'Manager', role: 'MANAGER', branch: 'WeGrow Skill Campus – Sivakasi Branch 1.0', color: '#1565C0', demoPassword: 'WG@Aji4#Qx82' },
+    { name: 'VIGNESH A', email: 'mfvat.vicky@gmail.com', title: 'Branch Manager', role: 'MANAGER', branch: 'WeGrow Skill Campus – Srivilliputhur Branch 2.0', color: '#3949AB', demoPassword: 'WG@Mfv7#Rt42' },
+    { name: 'ConnectX Admin', email: 'admin@wegrow.in', title: 'Platform Administrator', role: 'ADMIN', branch: 'WeGrow Corporate HQ', color: '#0A2A8C', demoPassword: 'Admin@123' }
+  ];
 
   // Form states
   const [email, setEmail] = useState('');
@@ -318,118 +331,67 @@ export const Gate = () => {
             </button>
           </form>
 
-          {/* Quick 1-Click Demo Login Selector */}
+          {/* Quick 1-Click Staff Login Selector */}
           {!isRegister && (
             <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  ⚡ 1-Click Demo Logins
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-orange-500">⚡</span> 1-Click Staff Sign-In
                 </span>
-                <span className="text-[11px] text-gray-400 dark:text-gray-500">Instant sign-in</span>
+                <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+                  {demoAccounts.length || 24} staff accounts
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                {/* Admin */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('admin@wegrow.in', 'Admin@123')}
-                  className="flex items-center gap-2.5 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-left transition-all group"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#0A2A8C] text-white flex items-center justify-center text-xs font-bold flex-none shadow-sm">
-                    AD
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                      Admin
-                    </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">Platform Admin</div>
-                  </div>
-                </button>
+              {/* Branch filter tabs */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-2 text-[10px]">
+                {['all', 'Sivakasi 3.0', 'Sivakasi 1.0', 'Srivilliputhur 2.0'].map(b => (
+                  <button
+                    type="button"
+                    key={b}
+                    onClick={() => setBranchFilter(b)}
+                    className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap transition-all ${
+                      branchFilter === b
+                        ? 'bg-[#0A2A8C] text-white shadow-xs'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    {b === 'all' ? 'All Staff' : b}
+                  </button>
+                ))}
+              </div>
 
-                {/* Priya */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('priya@wegrow.in', 'Demo@123')}
-                  className="flex items-center gap-2.5 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-pink-500 hover:bg-pink-50/50 dark:hover:bg-pink-950/30 text-left transition-all group"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#C2185B] text-white flex items-center justify-center text-xs font-bold flex-none shadow-sm">
-                    PR
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-pink-600">
-                      Priya R.
-                    </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">HR Manager (All)</div>
-                  </div>
-                </button>
-
-                {/* Arjun */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('arjun@wegrow.in', 'Demo@123')}
-                  className="flex items-center gap-2.5 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-left transition-all group"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#1565C0] text-white flex items-center justify-center text-xs font-bold flex-none shadow-sm">
-                    AM
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600">
-                      Arjun M.
-                    </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">Operations Head</div>
-                  </div>
-                </button>
-
-                {/* Kavya */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('kavya@skillcampus.in', 'Demo@123')}
-                  className="flex items-center gap-2.5 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-950/30 text-left transition-all group"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#6A1B9A] text-white flex items-center justify-center text-xs font-bold flex-none shadow-sm">
-                    KS
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-purple-600">
-                      Kavya S.
-                    </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">Lead Trainer (SC)</div>
-                  </div>
-                </button>
-
-                {/* Rahul */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('rahul@bschool.in', 'Demo@123')}
-                  className="flex items-center gap-2.5 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-950/30 text-left transition-all group"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#2E7D32] text-white flex items-center justify-center text-xs font-bold flex-none shadow-sm">
-                    RN
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-green-600">
-                      Rahul N.
-                    </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">Admissions (BS)</div>
-                  </div>
-                </button>
-
-                {/* Meera */}
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('meera@bschool.in', 'Demo@123')}
-                  className="flex items-center gap-2.5 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-rose-600 hover:bg-rose-50/50 dark:hover:bg-rose-950/30 text-left transition-all group"
-                >
-                  <div className="w-7 h-7 rounded-full bg-[#AD1457] text-white flex items-center justify-center text-xs font-bold flex-none shadow-sm">
-                    MI
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-rose-600">
-                      Meera I.
-                    </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">Program Director</div>
-                  </div>
-                </button>
+              {/* Staff grid */}
+              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
+                {(demoAccounts.length ? demoAccounts : defaultStaffList)
+                  .filter(acc => {
+                    if (branchFilter === 'all') return true;
+                    return acc.branch?.includes(branchFilter);
+                  })
+                  .map(acc => (
+                    <button
+                      type="button"
+                      key={acc._id || acc.email}
+                      onClick={() => handleDemoLogin(acc.email, acc.demoPassword || acc.password || 'Vijay@2004')}
+                      className="flex items-center gap-2 p-2 rounded-xl border border-gray-200 dark:border-gray-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-left transition-all group"
+                      title={`Login as ${acc.name} (${acc.title || acc.role})`}
+                    >
+                      <div
+                        className="w-7 h-7 rounded-full text-white flex items-center justify-center text-[10px] font-bold flex-none shadow-xs"
+                        style={{ backgroundColor: acc.color || '#5B5FC7' }}
+                      >
+                        {acc.name?.substring(0, 2).toUpperCase() || 'WG'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                          {acc.name}
+                        </div>
+                        <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+                          {acc.title || acc.designation || acc.role}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
               </div>
             </div>
           )}
