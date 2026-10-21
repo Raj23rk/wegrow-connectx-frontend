@@ -1,6 +1,9 @@
 import { io } from 'socket.io-client';
 
-const rawBackendUrl = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const DEFAULT_BACKEND_URL = 'https://wegrow-connectx-backend.onrender.com';
+const envBackendUrl = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const rawBackendUrl = envBackendUrl || (isLocal ? '' : DEFAULT_BACKEND_URL);
 const SOCKET_URL = rawBackendUrl ? rawBackendUrl.replace(/\/api$/, '') : '/';
 
 class SocketService {
