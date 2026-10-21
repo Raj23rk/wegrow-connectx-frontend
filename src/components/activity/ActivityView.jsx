@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Bell, MessageSquare, Megaphone, Calendar, CheckCheck, Clock } from 'lucide-react';
+import { Bell, MessageSquare, Megaphone, Calendar, CheckCheck, Clock, AtSign } from 'lucide-react';
 
 export const ActivityView = () => {
-  const { activities, setCurrentApp, setCurrentChannelId, setCurrentBrand } = useApp();
+  const { activities, setCurrentApp, setCurrentChannelId, setCurrentBrand, setCurrentChatId } = useApp();
   const [filter, setFilter] = useState('all');
 
   const filtered = activities.filter(a => {
@@ -17,6 +17,9 @@ export const ActivityView = () => {
       const b = act.link.targetId.split('-')[0];
       if (b) setCurrentBrand(b);
       setCurrentApp('teams');
+    } else if (act.link?.app === 'chat' && act.link?.targetId) {
+      setCurrentChatId(act.link.targetId);
+      setCurrentApp('chat');
     } else if (act.link?.app === 'calendar') {
       setCurrentApp('calendar');
     }
@@ -24,8 +27,9 @@ export const ActivityView = () => {
 
   const getIcon = (type) => {
     switch (type) {
-      case 'reply':
       case 'mention':
+        return <AtSign className="w-4 h-4 text-indigo-500" />;
+      case 'reply':
         return <MessageSquare className="w-4 h-4 text-blue-500" />;
       case 'announcement':
         return <Megaphone className="w-4 h-4 text-orange-500" />;
@@ -53,7 +57,7 @@ export const ActivityView = () => {
 
         {/* Filter Pills */}
         <div className="flex items-center gap-1.5 text-xs font-bold">
-          {['all', 'announcement', 'reply', 'meeting'].map(t => (
+          {['all', 'mention', 'reply', 'announcement', 'meeting'].map(t => (
             <button
               type="button"
               key={t}

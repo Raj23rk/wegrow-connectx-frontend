@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { Search, Sun, Moon, LogOut, Check, ChevronDown, User, ShieldCheck } from 'lucide-react';
+
 import logoImg from '../../images/wegrow&Bschool.webp';
 
 const STATUS_OPTIONS = [
@@ -51,18 +52,19 @@ export const TopBar = () => {
   };
 
   return (
-    <header className="h-12 bg-white dark:bg-[#181818] border-b border-gray-200 dark:border-[#2E2E2E] flex items-center justify-between px-3 md:px-4 z-30 flex-none select-none">
-      {/* Brand & Logo */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <img src={logoImg} alt="WeGrow & BSchool" className="h-7 w-auto object-contain rounded bg-white px-1 shadow-xs" />
-          <span className="font-extrabold text-sm tracking-tight text-gray-900 dark:text-white hidden sm:inline-block">
-            WeGrow <span className="text-[#FF6A13]">ConnectX</span>
-          </span>
+    <header className="h-12 bg-white dark:bg-[#181818] border-b border-gray-200 dark:border-[#2E2E2E] flex items-center justify-between px-2.5 sm:px-4 z-30 flex-none select-none">
+      {/* Brand & Logo - Replaced text with image logo */}
+      <div className="flex items-center gap-2 sm:gap-3 flex-none">
+        <div className="flex items-center">
+          <img
+            src={logoImg}
+            alt="WeGrow"
+            className="h-7 sm:h-8 max-w-[130px] sm:max-w-[160px] object-contain rounded-md bg-white dark:bg-white/95 px-1.5 py-0.5 shadow-2xs"
+          />
         </div>
 
         {/* Current brand badge */}
-        <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold capitalize bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+        <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold capitalize bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
           <span
             className="w-2 h-2 rounded-full"
             style={{
@@ -75,17 +77,18 @@ export const TopBar = () => {
       </div>
 
       {/* Global Search Bar */}
-      <div className="flex-1 max-w-xl mx-4">
+      <div className="flex-1 max-w-xl mx-2 sm:mx-4">
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#282828] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all cursor-pointer"
+          className="w-full flex items-center justify-between px-2.5 sm:px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#282828] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all cursor-pointer"
         >
-          <div className="flex items-center gap-2 truncate">
+          <div className="flex items-center gap-1.5 sm:gap-2 truncate">
             <Search className="w-3.5 h-3.5 flex-none" />
-            <span className="truncate">Search messages, files, people, channels...</span>
+            <span className="truncate hidden sm:inline">Search messages, files, people, channels...</span>
+            <span className="truncate sm:hidden">Search...</span>
           </div>
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-xs">
+          <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-xs">
             Ctrl + K
           </kbd>
         </button>

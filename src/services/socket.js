@@ -69,6 +69,31 @@ class SocketService {
     if (this.socket) this.socket.emit('status:change', { userId, status, statusMessage });
   }
 
+  // Direct Call signaling
+  initiateCall(callData) {
+    if (this.socket) this.socket.emit('call:initiate', callData);
+  }
+
+  acceptCall(callData) {
+    if (this.socket) this.socket.emit('call:accept', callData);
+  }
+
+  rejectCall(callData) {
+    if (this.socket) this.socket.emit('call:reject', callData);
+  }
+
+  endCall(callData) {
+    if (this.socket) this.socket.emit('call:end', callData);
+  }
+
+  sendCallSignal(signalData) {
+    if (this.socket) this.socket.emit('call:signal', signalData);
+  }
+
+  sendCallBusy(busyData) {
+    if (this.socket) this.socket.emit('call:busy', busyData);
+  }
+
   on(event, callback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());

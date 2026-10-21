@@ -3,8 +3,9 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import {
   Hash, Megaphone, Video, Send, Smile, Paperclip, AlertCircle, MessageSquare,
-  Bold, Italic, Code, Link, ChevronDown, ChevronUp, Check, CornerDownRight
+  Bold, Italic, Code, Link, ChevronDown, ChevronUp, Check, CornerDownRight, AtSign, ArrowLeft
 } from 'lucide-react';
+import { EmojiPicker } from '../common/EmojiPicker';
 
 const COMMON_REACTIONS = ['👍', '❤️', '🎉', '🚀', '👏', '🔥'];
 
@@ -16,7 +17,10 @@ export const ChannelView = () => {
     toggleReaction,
     currentBrand,
     setIsNewMeetingOpen,
-    setSelectedUserForProfile
+    setSelectedUserForProfile,
+    isMobileChannelOpen,
+    setIsMobileChannelOpen,
+    people
   } = useApp();
   const { user } = useAuth();
 
@@ -24,6 +28,8 @@ export const ChannelView = () => {
   const [subject, setSubject] = useState('');
   const [postText, setPostText] = useState('');
   const [isImportant, setIsImportant] = useState(false);
+  const [showPostEmojiPicker, setShowPostEmojiPicker] = useState(false);
+  const [activeReplyEmojiPickerId, setActiveReplyEmojiPickerId] = useState(null);
   const [replyInputs, setReplyInputs] = useState({}); // messageId -> text
   const [expandedThreads, setExpandedThreads] = useState({}); // messageId -> boolean
   const [activeReactionPicker, setActiveReactionPicker] = useState(null);
@@ -74,8 +80,18 @@ export const ChannelView = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-[#F5F5F5] dark:bg-[#1E1E1E] min-w-0 overflow-hidden">
       {/* Channel Header */}
-      <header className="h-14 bg-white dark:bg-[#252525] border-b border-gray-200 dark:border-gray-800 px-4 md:px-6 flex items-center justify-between flex-none z-10 shadow-xs">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <header className="h-14 bg-white dark:bg-[#252525] border-b border-gray-200 dark:border-gray-800 px-3 md:px-6 flex items-center justify-between flex-none z-10 shadow-xs">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          {/* Mobile Back Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileChannelOpen(false)}
+            className="md:hidden p-1.5 -ml-1 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all flex-none"
+            title="Back to Channels list"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
           <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400 flex-none">
             {currentChannel.isAnnounce ? (
               <Megaphone className="w-4 h-4 text-orange-500" />
@@ -290,6 +306,26 @@ export const ChannelView = () => {
                         }}
                         className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#282828] text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
                       />
+                      <div className="relative">
+                        {activeReplyEmojiPickerId === post._id && (
+                          <EmojiPicker
+                            onSelect={(emoji) => setReplyInputs({
+                              ...replyInputs,
+                              [post._id]: (replyInputs[post._id] || '') + emoji
+                            })}
+                            onClose={() => setActiveReplyEmojiPickerId(null)}
+                            align="right"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setActiveReplyEmojiPickerId(activeReplyEmojiPickerId === post._id ? null : post._id)}
+                          className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 flex-none transition-all"
+                          title="Add Emoji"
+                        >
+                          <Smile className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleSendReply(post._id)}
@@ -362,6 +398,43 @@ export const ChannelView = () => {
                   className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <Code className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+
+                {/* Emoji Picker Button */}
+                <div className="relative">
+                  {showPostEmojiPicker && (
+                    <EmojiPicker
+                      onSelect={(emoji) => setPostText(prev => prev + emoji)}
+                      onClose={() => setShowPostEmojiPicker(false)}
+                      align="left"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowPostEmojiPicker(!showPostEmojiPicker)}
+                    title="Insert Emoji"
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-all ${
+                      showPostEmojiPicker
+                        ? 'bg-indigo-100 dark:bg-indigo-950 text-[#5B5FC7]'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500'
+                    }`}
+                  >
+                    <Smile className="w-3.5 h-3.5" />
+                    <span>Emoji</span>
+                  </button>
+                </div>
+
+                {/* Mention Helper */}
+                <button
+                  type="button"
+                  onClick={() => setPostText(prev => prev + '@')}
+                  title="Mention Colleague (@) with Resend email notification"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition-all"
+                >
+                  <AtSign className="w-3.5 h-3.5" />
+                  <span>Mention</span>
                 </button>
 
                 <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700 mx-1"></div>

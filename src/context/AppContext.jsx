@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import { socketService } from '../services/socket';
+import { callAudio } from '../services/callAudio';
 import { useAuth } from './AuthContext';
 
 const AppContext = createContext(null);
@@ -36,6 +37,24 @@ export const AppProvider = ({ children }) => {
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [selectedUserForProfile, setSelectedUserForProfile] = useState(null);
 
+  // Direct Calling (Microsoft Teams calling format)
+  const [activeCall, setActiveCall] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [isRingtoneMuted, setIsRingtoneMuted] = useState(false);
+
+  const peerConnectionRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteStreamRef = useRef(null);
+  const screenStreamRef = useRef(null);
+  const callTimerRef = useRef(null);
+  const activeCallRef = useRef(null);
+
+  useEffect(() => {
+    activeCallRef.current = activeCall;
+  }, [activeCall]);
+
   // Live indicators
   const [typingMap, setTypingMap] = useState({}); // key: contextId -> Set of usernames
 
@@ -56,11 +75,15 @@ export const AppProvider = ({ children }) => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  // Mobile navigation state
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+  const [isMobileChannelOpen, setIsMobileChannelOpen] = useState(false);
+
   // Load initial global data once authenticated
   const loadInitialData = useCallback(async () => {
     if (!user) return;
     try {
-      const [brandsRes, channelsRes, chatsRes, peopleRes, activitiesRes] = await Promise.all([
+      const results = await Promise.allSettled([
         api.getBrands(),
         api.getChannels(),
         api.getChats(),
@@ -68,16 +91,20 @@ export const AppProvider = ({ children }) => {
         api.getActivities()
       ]);
 
-      if (brandsRes.success) setBrands(brandsRes.brands || []);
-      if (channelsRes.success) setChannels(channelsRes.channels || []);
-      if (chatsRes.success) {
+      const [brandsRes, channelsRes, chatsRes, peopleRes, activitiesRes] = results.map(
+        r => (r.status === 'fulfilled' ? r.value : {})
+      );
+
+      if (brandsRes?.success) setBrands(brandsRes.brands || []);
+      if (channelsRes?.success) setChannels(channelsRes.channels || []);
+      if (chatsRes?.success) {
         setChats(chatsRes.chats || []);
         if (chatsRes.chats && chatsRes.chats.length > 0 && !currentChatId) {
           setCurrentChatId(chatsRes.chats[0]._id);
         }
       }
-      if (peopleRes.success) setPeople(peopleRes.users || []);
-      if (activitiesRes.success) {
+      if (peopleRes?.success) setPeople(peopleRes.users || []);
+      if (activitiesRes?.success) {
         setActivities(activitiesRes.activities || []);
         setUnreadActivitiesCount(activitiesRes.unreadCount || 0);
       }
@@ -286,32 +313,496 @@ export const AppProvider = ({ children }) => {
       setEvents(prev => prev.filter(e => e._id !== eventId));
     };
 
+    // Real-time Activity / Mention notification
+    const handleNewActivity = (newAct) => {
+      setActivities(prev => [newAct, ...prev]);
+      setUnreadActivitiesCount(prev => prev + 1);
+    };
+
+    // Updated direct chat message (reactions)
+    const handleUpdatedChatMessage = ({ chatId, message }) => {
+      if (chatId === currentChatId) {
+        setChatMessages(prev => prev.map(m => m._id === message._id ? message : m));
+      }
+    };
+
     socketService.on('message:new', handleNewMessage);
     socketService.on('message:updated', handleUpdatedMessage);
     socketService.on('message:deleted', handleDeletedMessage);
     socketService.on('chat:message:new', handleNewChatMessage);
+    socketService.on('chat:message:updated', handleUpdatedChatMessage);
     socketService.on('user:presence', handleUserPresence);
     socketService.on('typing:start', handleTypingStart);
     socketService.on('typing:stop', handleTypingStop);
     socketService.on('calendar:event:new', handleCalendarEventNew);
     socketService.on('calendar:event:updated', handleCalendarEventUpdated);
     socketService.on('calendar:event:deleted', handleCalendarEventDeleted);
+    socketService.on('activity:new', handleNewActivity);
 
     return () => {
       socketService.off('message:new', handleNewMessage);
       socketService.off('message:updated', handleUpdatedMessage);
       socketService.off('message:deleted', handleDeletedMessage);
       socketService.off('chat:message:new', handleNewChatMessage);
+      socketService.off('chat:message:updated', handleUpdatedChatMessage);
       socketService.off('user:presence', handleUserPresence);
       socketService.off('typing:start', handleTypingStart);
       socketService.off('typing:stop', handleTypingStop);
       socketService.off('calendar:event:new', handleCalendarEventNew);
       socketService.off('calendar:event:updated', handleCalendarEventUpdated);
       socketService.off('calendar:event:deleted', handleCalendarEventDeleted);
+      socketService.off('activity:new', handleNewActivity);
     };
   }, [user, currentChannelId, currentChatId]);
 
+  // WebRTC PeerConnection Setup
+  const setupPeerConnection = (callId, targetUserId, initialLocalStream) => {
+    if (peerConnectionRef.current) {
+      try {
+        peerConnectionRef.current.close();
+      } catch (e) {}
+      peerConnectionRef.current = null;
+    }
+
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+      ]
+    });
+
+    peerConnectionRef.current = pc;
+
+    if (initialLocalStream) {
+      initialLocalStream.getTracks().forEach(track => {
+        try {
+          pc.addTrack(track, initialLocalStream);
+        } catch (e) {}
+      });
+    }
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socketService.sendCallSignal({
+          callId,
+          to: targetUserId,
+          signal: { type: 'candidate', candidate: event.candidate }
+        });
+      }
+    };
+
+    pc.ontrack = (event) => {
+      if (event.streams && event.streams[0]) {
+        remoteStreamRef.current = event.streams[0];
+        setRemoteStream(event.streams[0]);
+      }
+    };
+
+    return pc;
+  };
+
+  const cleanupMediaAndPeer = () => {
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => t.stop());
+      localStreamRef.current = null;
+    }
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(t => t.stop());
+      screenStreamRef.current = null;
+    }
+    if (peerConnectionRef.current) {
+      try {
+        peerConnectionRef.current.close();
+      } catch (e) {}
+      peerConnectionRef.current = null;
+    }
+    setLocalStream(null);
+    setRemoteStream(null);
+  };
+
+  // Direct Call Socket Listeners
+  useEffect(() => {
+    if (!user) return;
+
+    const handleCallIncoming = (data) => {
+      const cur = activeCallRef.current;
+      if (cur && cur.status !== 'ended' && cur.status !== 'declined') {
+        socketService.sendCallBusy({ callId: data.callId, to: data.caller?._id });
+        return;
+      }
+      setIncomingCall(data);
+      callAudio.playIncomingRingtone();
+    };
+
+    const handleCallAccepted = async ({ callId, recipient, acceptType }) => {
+      callAudio.stopOutgoingRingback();
+      callAudio.playCallConnected();
+
+      setActiveCall(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          status: 'connected',
+          startTime: Date.now()
+        };
+      });
+
+      const pc = setupPeerConnection(callId, recipient._id, localStreamRef.current);
+      try {
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true
+        });
+        await pc.setLocalDescription(offer);
+
+        socketService.sendCallSignal({
+          callId,
+          to: recipient._id,
+          signal: { type: 'offer', sdp: pc.localDescription }
+        });
+      } catch (err) {
+        console.warn('[WebRTC] Error creating offer:', err.message);
+      }
+    };
+
+    const handleCallRejected = () => {
+      callAudio.stopAll();
+      callAudio.playCallEnded();
+      cleanupMediaAndPeer();
+      setActiveCall(prev => prev ? { ...prev, status: 'declined' } : null);
+      setTimeout(() => {
+        setActiveCall(null);
+      }, 2500);
+    };
+
+    const handleCallEnded = () => {
+      callAudio.stopAll();
+      callAudio.playCallEnded();
+      cleanupMediaAndPeer();
+      setActiveCall(prev => prev ? { ...prev, status: 'ended' } : null);
+      setIncomingCall(null);
+      setTimeout(() => {
+        setActiveCall(null);
+      }, 2000);
+    };
+
+    const handleCallBusy = () => {
+      callAudio.stopAll();
+      callAudio.playCallEnded();
+      cleanupMediaAndPeer();
+      setActiveCall(prev => prev ? { ...prev, status: 'busy' } : null);
+      setTimeout(() => {
+        setActiveCall(null);
+      }, 2500);
+    };
+
+    const handleCallSignal = async ({ callId, from, signal }) => {
+      let pc = peerConnectionRef.current;
+      if (!pc) {
+        pc = setupPeerConnection(callId, from, localStreamRef.current);
+      }
+
+      try {
+        if (signal.type === 'offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          socketService.sendCallSignal({
+            callId,
+            to: from,
+            signal: { type: 'answer', sdp: pc.localDescription }
+          });
+        } else if (signal.type === 'answer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+        } else if (signal.type === 'candidate' && signal.candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        }
+      } catch (err) {
+        console.warn('[WebRTC] Signal handling error:', err.message);
+      }
+    };
+
+    socketService.on('call:incoming', handleCallIncoming);
+    socketService.on('call:accepted', handleCallAccepted);
+    socketService.on('call:rejected', handleCallRejected);
+    socketService.on('call:ended', handleCallEnded);
+    socketService.on('call:busy', handleCallBusy);
+    socketService.on('call:signal', handleCallSignal);
+
+    return () => {
+      socketService.off('call:incoming', handleCallIncoming);
+      socketService.off('call:accepted', handleCallAccepted);
+      socketService.off('call:rejected', handleCallRejected);
+      socketService.off('call:ended', handleCallEnded);
+      socketService.off('call:busy', handleCallBusy);
+      socketService.off('call:signal', handleCallSignal);
+    };
+  }, [user]);
+
+  // Call duration counter
+  useEffect(() => {
+    if (activeCall?.status === 'connected') {
+      callTimerRef.current = setInterval(() => {
+        setActiveCall(prev => {
+          if (!prev || prev.status !== 'connected') return prev;
+          return { ...prev, duration: (prev.duration || 0) + 1 };
+        });
+      }, 1000);
+      return () => {
+        if (callTimerRef.current) {
+          clearInterval(callTimerRef.current);
+          callTimerRef.current = null;
+        }
+      };
+    }
+  }, [activeCall?.status]);
+
   // Actions
+  const startDirectCall = async (targetPartner, callType = 'video') => {
+    if (!user || !targetPartner) return;
+    const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
+
+    const newCall = {
+      callId,
+      partner: targetPartner,
+      type: callType,
+      role: 'caller',
+      status: 'calling',
+      startTime: null,
+      duration: 0,
+      isMuted: false,
+      isVideoOff: callType === 'audio',
+      isScreenSharing: false,
+      chatId: currentChatId
+    };
+    setActiveCall(newCall);
+
+    callAudio.playOutgoingRingback();
+
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: callType === 'video',
+        audio: true
+      });
+    } catch (err) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } catch (err2) {
+        console.warn('[Call] Camera/mic unavailable:', err2.message);
+      }
+    }
+
+    if (stream) {
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+    }
+
+    socketService.initiateCall({
+      callId,
+      recipientId: targetPartner._id,
+      caller: {
+        _id: user._id,
+        name: user.name,
+        avatar: user.avatar,
+        color: user.color,
+        title: user.title,
+        department: user.department,
+        branch: user.branch
+      },
+      callType,
+      chatId: currentChatId
+    });
+  };
+
+  const acceptIncomingCall = async (acceptType = null) => {
+    if (!incomingCall) return;
+    const type = acceptType || incomingCall.callType || 'video';
+
+    callAudio.stopIncomingRingtone();
+    callAudio.playCallConnected();
+
+    const currIncoming = incomingCall;
+    setIncomingCall(null);
+
+    const callState = {
+      callId: currIncoming.callId,
+      partner: currIncoming.caller,
+      type,
+      role: 'callee',
+      status: 'connected',
+      startTime: Date.now(),
+      duration: 0,
+      isMuted: false,
+      isVideoOff: type === 'audio',
+      isScreenSharing: false,
+      chatId: currIncoming.chatId
+    };
+    setActiveCall(callState);
+
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: type === 'video',
+        audio: true
+      });
+    } catch (err) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } catch (err2) {}
+    }
+
+    if (stream) {
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+    }
+
+    setupPeerConnection(currIncoming.callId, currIncoming.caller._id, stream);
+
+    socketService.acceptCall({
+      callId: currIncoming.callId,
+      to: currIncoming.caller._id,
+      recipient: {
+        _id: user._id,
+        name: user.name,
+        avatar: user.avatar,
+        color: user.color,
+        title: user.title,
+        department: user.department,
+        branch: user.branch
+      },
+      acceptType: type
+    });
+  };
+
+  const rejectIncomingCall = () => {
+    if (!incomingCall) return;
+    callAudio.stopIncomingRingtone();
+    callAudio.playCallEnded();
+
+    socketService.rejectCall({
+      callId: incomingCall.callId,
+      to: incomingCall.caller._id,
+      reason: 'declined'
+    });
+
+    setIncomingCall(null);
+  };
+
+  const endCurrentCall = (reason = 'completed') => {
+    callAudio.stopAll();
+    callAudio.playCallEnded();
+
+    const cur = activeCallRef.current;
+    if (cur) {
+      if (cur.partner?._id) {
+        socketService.endCall({
+          callId: cur.callId,
+          to: cur.partner._id,
+          reason,
+          duration: cur.duration
+        });
+      }
+
+      if (cur.chatId && cur.duration > 0) {
+        const mins = Math.floor(cur.duration / 60);
+        const secs = cur.duration % 60;
+        const durStr = `${mins > 0 ? `${mins}m ` : ''}${secs}s`;
+        const callLabel = cur.type === 'video' ? 'Video call' : 'Audio call';
+        sendChatMessage(`📞 ${callLabel} ended • ${durStr}`).catch(() => {});
+      } else if (cur.chatId && cur.role === 'caller' && cur.status !== 'connected') {
+        const callLabel = cur.type === 'video' ? 'video call' : 'audio call';
+        sendChatMessage(`📞 Cancelled ${callLabel}`).catch(() => {});
+      }
+    }
+
+    cleanupMediaAndPeer();
+
+    setActiveCall(prev => prev ? { ...prev, status: 'ended' } : null);
+    setTimeout(() => {
+      setActiveCall(null);
+    }, 1500);
+  };
+
+  const toggleCallAudio = () => {
+    setActiveCall(prev => {
+      if (!prev) return null;
+      const nextMuted = !prev.isMuted;
+      if (localStreamRef.current) {
+        localStreamRef.current.getAudioTracks().forEach(t => {
+          t.enabled = !nextMuted;
+        });
+      }
+      return { ...prev, isMuted: nextMuted };
+    });
+  };
+
+  const toggleCallVideo = () => {
+    setActiveCall(prev => {
+      if (!prev) return null;
+      const nextOff = !prev.isVideoOff;
+      if (localStreamRef.current) {
+        localStreamRef.current.getVideoTracks().forEach(t => {
+          t.enabled = !nextOff;
+        });
+      }
+      return { ...prev, isVideoOff: nextOff };
+    });
+  };
+
+  const toggleScreenShare = async () => {
+    if (!activeCall || activeCall.status !== 'connected') return;
+
+    if (activeCall.isScreenSharing) {
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
+        screenStreamRef.current = null;
+      }
+      if (localStreamRef.current && peerConnectionRef.current) {
+        const videoTrack = localStreamRef.current.getVideoTracks()[0];
+        const sender = peerConnectionRef.current.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender && videoTrack) {
+          sender.replaceTrack(videoTrack).catch(() => {});
+        }
+      }
+      setActiveCall(prev => prev ? { ...prev, isScreenSharing: false } : null);
+    } else {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        screenStreamRef.current = screenStream;
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        if (peerConnectionRef.current) {
+          const sender = peerConnectionRef.current.getSenders().find(s => s.track && s.track.kind === 'video');
+          if (sender) {
+            sender.replaceTrack(screenTrack).catch(() => {});
+          }
+        }
+
+        screenTrack.onended = () => {
+          toggleScreenShare();
+        };
+
+        setActiveCall(prev => prev ? { ...prev, isScreenSharing: true } : null);
+      } catch (err) {
+        console.warn('[ScreenShare] Error:', err.message);
+      }
+    }
+  };
+
+  const toggleRingtoneMute = () => {
+    setIsRingtoneMuted(prev => {
+      const next = !prev;
+      if (next) callAudio.stopIncomingRingtone();
+      else callAudio.playIncomingRingtone();
+      return next;
+    });
+  };
   const sendChannelMessage = async (msgData) => {
     const res = await api.sendMessage({
       ...msgData,
@@ -460,9 +951,15 @@ export const AppProvider = ({ children }) => {
         events,
         files,
         people,
+        setPeople,
         activities,
         unreadActivitiesCount,
         typingMap,
+        // Mobile layout toggles
+        isMobileChatOpen,
+        setIsMobileChatOpen,
+        isMobileChannelOpen,
+        setIsMobileChannelOpen,
         // Modals
         isSearchOpen,
         setIsSearchOpen,
@@ -483,7 +980,21 @@ export const AppProvider = ({ children }) => {
         createMeeting,
         rsvpMeeting,
         loadFiles,
-        loadCalendarEvents
+        loadCalendarEvents,
+        // Direct Calling (Microsoft Teams format)
+        activeCall,
+        incomingCall,
+        localStream,
+        remoteStream,
+        isRingtoneMuted,
+        startDirectCall,
+        acceptIncomingCall,
+        rejectIncomingCall,
+        endCurrentCall,
+        toggleCallAudio,
+        toggleCallVideo,
+        toggleScreenShare,
+        toggleRingtoneMute
       }}
     >
       {children}

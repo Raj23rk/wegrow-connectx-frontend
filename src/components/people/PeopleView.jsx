@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { User as UserIcon, Search, MessageSquare, Video, Mail, Briefcase, Filter, Sparkles, Phone, Building2, MapPin, ShieldCheck } from 'lucide-react';
 
 export const PeopleView = () => {
-  const { people, startOrGetDirectChat, setSelectedUserForProfile, setIsNewMeetingOpen } = useApp();
+  const { people, startOrGetDirectChat, setSelectedUserForProfile, setIsNewMeetingOpen, startDirectCall } = useApp();
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
@@ -233,6 +233,14 @@ export const PeopleView = () => {
                       >
                         <MessageSquare className="w-3.5 h-3.5" />
                         <span>Chat</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startDirectCall(p, 'video')}
+                        className="p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 hover:text-emerald-700 transition-all"
+                        title="Start Direct Teams Video Call"
+                      >
+                        <Video className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"

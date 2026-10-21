@@ -17,7 +17,11 @@ export const ListPane = () => {
     setCurrentChatId,
     activities,
     setIsNewChannelOpen,
-    setIsNewChatOpen
+    setIsNewChatOpen,
+    isMobileChatOpen,
+    setIsMobileChatOpen,
+    isMobileChannelOpen,
+    setIsMobileChannelOpen
   } = useApp();
   const { user } = useAuth();
 
@@ -53,8 +57,11 @@ export const ListPane = () => {
     return null;
   }
 
+  const isHiddenOnMobile = (currentApp === 'chat' && isMobileChatOpen) ||
+                           (currentApp === 'teams' && isMobileChannelOpen);
+
   return (
-    <aside className="w-72 md:w-80 bg-[#FAFAFA] dark:bg-[#242424] border-r border-gray-200 dark:border-[#2A2A2A] flex flex-col h-full z-10 flex-none select-none">
+    <aside className={`w-full md:w-80 bg-[#FAFAFA] dark:bg-[#242424] border-r border-gray-200 dark:border-[#2A2A2A] flex flex-col h-full z-10 flex-none select-none ${isHiddenOnMobile ? 'hidden md:flex' : 'flex'}`}>
       {/* ================= TEAMS LIST ================= */}
       {currentApp === 'teams' && (
         <>
@@ -114,6 +121,7 @@ export const ListPane = () => {
                             onClick={() => {
                               setCurrentChannelId(ch.id);
                               setCurrentBrand(ch.brandId);
+                              setIsMobileChannelOpen(true);
                             }}
                             className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-left text-xs transition-all ${
                               isSelected
@@ -169,7 +177,10 @@ export const ListPane = () => {
                   <button
                     type="button"
                     key={chat._id}
-                    onClick={() => setCurrentChatId(chat._id)}
+                    onClick={() => {
+                      setCurrentChatId(chat._id);
+                      setIsMobileChatOpen(true);
+                    }}
                     className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all ${
                       isSelected
                         ? 'bg-white dark:bg-[#323232] shadow-xs'

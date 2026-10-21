@@ -16,9 +16,11 @@ import { ProfileModal } from '../common/ProfileModal';
 import { NewMeetingModal } from '../common/NewMeetingModal';
 import { NewChannelModal } from '../common/NewChannelModal';
 import { NewChatModal } from '../common/NewChatModal';
+import { IncomingCallModal } from '../call/IncomingCallModal';
+import { ActiveCallModal } from '../call/ActiveCallModal';
 
 export const Shell = () => {
-  const { currentApp } = useApp();
+  const { currentApp, isMobileChatOpen, isMobileChannelOpen } = useApp();
 
   const renderMainContent = () => {
     switch (currentApp) {
@@ -41,13 +43,17 @@ export const Shell = () => {
     }
   };
 
+  const isMainHiddenOnMobile =
+    (currentApp === 'chat' && !isMobileChatOpen) ||
+    (currentApp === 'teams' && !isMobileChannelOpen);
+
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-gray-100 dark:bg-[#1F1F1F]">
       {/* Top Application Bar */}
       <TopBar />
 
       {/* Main Workspace Frame */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="flex-1 flex overflow-hidden min-h-0 relative pb-14 md:pb-0">
         {/* Navigation Rail */}
         <Rail />
 
@@ -55,7 +61,11 @@ export const Shell = () => {
         <ListPane />
 
         {/* Primary Content View */}
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <main
+          className={`flex-1 flex flex-col min-w-0 overflow-hidden relative ${
+            isMainHiddenOnMobile ? 'hidden md:flex' : 'flex'
+          }`}
+        >
           {renderMainContent()}
         </main>
       </div>
@@ -66,6 +76,8 @@ export const Shell = () => {
       <NewMeetingModal />
       <NewChannelModal />
       <NewChatModal />
+      <IncomingCallModal />
+      <ActiveCallModal />
     </div>
   );
 };

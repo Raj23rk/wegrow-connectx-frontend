@@ -23,9 +23,53 @@ export const Rail = () => {
   ];
 
   return (
-    <aside className="w-16 md:w-[68px] bg-[#EBEBEB] dark:bg-[#181818] border-r border-gray-200 dark:border-[#2A2A2A] flex flex-col items-center py-2 z-20 flex-none select-none">
-      <div className="w-full flex flex-col items-center gap-1">
-        {railItems.map(item => {
+    <>
+      {/* Desktop Left Rail */}
+      <aside className="hidden md:flex w-[68px] bg-[#EBEBEB] dark:bg-[#181818] border-r border-gray-200 dark:border-[#2A2A2A] flex-col items-center py-2 z-20 flex-none select-none">
+        <div className="w-full flex flex-col items-center gap-1">
+          {railItems.map(item => {
+            const Icon = item.icon;
+            const isActive = currentApp === item.id;
+
+            return (
+              <button
+                type="button"
+                key={item.id}
+                onClick={() => {
+                  setCurrentApp(item.id);
+                }}
+                className={`relative w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all group ${
+                  isActive
+                    ? 'text-[#5B5FC7] dark:text-[#9EA2FF] font-bold'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-800/50'
+                }`}
+              >
+                {/* Left active indicator pill */}
+                {isActive && (
+                  <span className="absolute left-0 top-3 bottom-3 w-1 bg-[#5B5FC7] dark:bg-[#7F85F5] rounded-r-md"></span>
+                )}
+
+                {/* Icon with badge */}
+                <div className="relative">
+                  <Icon className={`w-5 h-5 transition-transform group-hover:scale-105 ${isActive ? 'stroke-[2.5px]' : 'stroke-[1.8px]'}`} />
+                  {item.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-[#C4314B] text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-[#EBEBEB] dark:border-[#181818]">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
+                </div>
+
+                {/* Label */}
+                <span className="text-[10px] tracking-tight">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-[#EBEBEB] dark:bg-[#181818] border-t border-gray-200 dark:border-[#2A2A2A] flex items-center justify-around z-40 select-none px-1 shadow-lg">
+        {railItems.slice(0, 5).map(item => {
           const Icon = item.icon;
           const isActive = currentApp === item.id;
 
@@ -33,23 +77,25 @@ export const Rail = () => {
             <button
               type="button"
               key={item.id}
-              onClick={() => setCurrentApp(item.id)}
-              className={`relative w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all group ${
+              onClick={() => {
+                setCurrentApp(item.id);
+              }}
+              className={`relative flex-1 h-full flex flex-col items-center justify-center gap-0.5 transition-all ${
                 isActive
                   ? 'text-[#5B5FC7] dark:text-[#9EA2FF] font-bold'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-800/50'
+                  : 'text-gray-500 dark:text-gray-400'
               }`}
             >
-              {/* Left active indicator pill */}
+              {/* Top active indicator line */}
               {isActive && (
-                <span className="absolute left-0 top-3 bottom-3 w-1 bg-[#5B5FC7] dark:bg-[#7F85F5] rounded-r-md"></span>
+                <span className="absolute top-0 left-4 right-4 h-0.5 bg-[#5B5FC7] dark:bg-[#7F85F5] rounded-b-md"></span>
               )}
 
               {/* Icon with badge */}
               <div className="relative">
-                <Icon className={`w-5 h-5 transition-transform group-hover:scale-105 ${isActive ? 'stroke-[2.5px]' : 'stroke-[1.8px]'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5px]' : 'stroke-[1.8px]'}`} />
                 {item.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-[#C4314B] text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-[#EBEBEB] dark:border-[#181818]">
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-[#C4314B] text-white text-[9px] font-extrabold flex items-center justify-center border border-[#EBEBEB] dark:border-[#181818]">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
@@ -60,7 +106,7 @@ export const Rail = () => {
             </button>
           );
         })}
-      </div>
-    </aside>
+      </nav>
+    </>
   );
 };

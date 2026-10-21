@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Mail, MessageSquare, Video, Briefcase, Building, X, Shield, Calendar, Phone, MapPin } from 'lucide-react';
 
 export const ProfileModal = () => {
-  const { selectedUserForProfile, setSelectedUserForProfile, startOrGetDirectChat, setIsNewMeetingOpen } = useApp();
+  const { selectedUserForProfile, setSelectedUserForProfile, startOrGetDirectChat, setIsNewMeetingOpen, startDirectCall } = useApp();
   const { user } = useAuth();
 
   if (!selectedUserForProfile) return null;
@@ -152,8 +152,21 @@ export const ProfileModal = () => {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  setSelectedUserForProfile(null);
+                  startDirectCall(p, 'video');
+                }}
+                className="py-2.5 px-3 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                title="Start Direct Teams Video Call"
+              >
+                <Video className="w-4 h-4" />
+                <span>Call</span>
+              </button>
+              <button
+                type="button"
                 onClick={handleScheduleMeet}
                 className="py-2.5 px-3 rounded-xl font-bold text-xs border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center gap-1.5 transition-all"
+                title="Schedule Meeting for Later"
               >
                 <Calendar className="w-4 h-4" />
                 <span>Meet</span>
