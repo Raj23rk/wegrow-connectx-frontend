@@ -368,7 +368,10 @@ export const AppProvider = ({ children }) => {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        { urls: 'stun:stun.services.mozilla.com' }
       ]
     });
 
@@ -567,6 +570,53 @@ export const AppProvider = ({ children }) => {
     if (!user || !targetPartner) return;
     const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
 
+    callAudio.playOutgoingRingback();
+
+    let stream = null;
+    let cameraError = null;
+
+    if (navigator?.mediaDevices?.getUserMedia) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: callType === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false,
+          audio: { echoCancellation: true, noiseSuppression: true }
+        });
+      } catch (err) {
+        console.warn('[Call] Primary media request failed:', err.name, err.message);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          cameraError = 'Camera/mic permission denied. Click the lock/camera icon in your address bar to allow permissions.';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          cameraError = 'Camera is in use by another application (Zoom, Teams, etc.). Please close other apps using the camera.';
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          cameraError = 'No camera or microphone found on your device.';
+        } else {
+          cameraError = `Camera error: ${err.message || err.name}`;
+        }
+
+        // Retry with basic constraints or fallback to audio-only
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: callType === 'video', audio: true });
+          cameraError = null;
+        } catch (retryErr) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          } catch (audioErr) {
+            console.warn('[Call] Audio also unavailable:', audioErr.message);
+          }
+        }
+      }
+    } else {
+      cameraError = 'Camera access not supported in this browser environment (requires HTTPS).';
+    }
+
+    const hasVideoTrack = !!(stream && stream.getVideoTracks().length > 0);
+    const isVideoOff = callType === 'audio' || !hasVideoTrack;
+
+    if (stream) {
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+    }
+
     const newCall = {
       callId,
       partner: targetPartner,
@@ -576,32 +626,12 @@ export const AppProvider = ({ children }) => {
       startTime: null,
       duration: 0,
       isMuted: false,
-      isVideoOff: callType === 'audio',
+      isVideoOff,
       isScreenSharing: false,
-      chatId: currentChatId
+      chatId: currentChatId,
+      cameraError: !hasVideoTrack && callType === 'video' ? cameraError : null
     };
     setActiveCall(newCall);
-
-    callAudio.playOutgoingRingback();
-
-    let stream = null;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: callType === 'video',
-        audio: true
-      });
-    } catch (err) {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      } catch (err2) {
-        console.warn('[Call] Camera/mic unavailable:', err2.message);
-      }
-    }
-
-    if (stream) {
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-    }
 
     socketService.initiateCall({
       callId,
@@ -630,6 +660,48 @@ export const AppProvider = ({ children }) => {
     const currIncoming = incomingCall;
     setIncomingCall(null);
 
+    let stream = null;
+    let cameraError = null;
+
+    if (navigator?.mediaDevices?.getUserMedia) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false,
+          audio: { echoCancellation: true, noiseSuppression: true }
+        });
+      } catch (err) {
+        console.warn('[Call] Camera/mic accept request failed:', err.name, err.message);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          cameraError = 'Camera/mic permission denied. Click the lock/camera icon in your address bar to allow permissions.';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          cameraError = 'Camera is in use by another app (Zoom, Teams, etc.). Please close other apps using the camera.';
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          cameraError = 'No camera or microphone found on your device.';
+        } else {
+          cameraError = `Camera error: ${err.message || err.name}`;
+        }
+
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
+          cameraError = null;
+        } catch (retryErr) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          } catch (audioErr) {}
+        }
+      }
+    } else {
+      cameraError = 'Camera access not supported in this browser environment (requires HTTPS).';
+    }
+
+    const hasVideoTrack = !!(stream && stream.getVideoTracks().length > 0);
+    const isVideoOff = type === 'audio' || !hasVideoTrack;
+
+    if (stream) {
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+    }
+
     const callState = {
       callId: currIncoming.callId,
       partner: currIncoming.caller,
@@ -639,28 +711,12 @@ export const AppProvider = ({ children }) => {
       startTime: Date.now(),
       duration: 0,
       isMuted: false,
-      isVideoOff: type === 'audio',
+      isVideoOff,
       isScreenSharing: false,
-      chatId: currIncoming.chatId
+      chatId: currIncoming.chatId,
+      cameraError: !hasVideoTrack && type === 'video' ? cameraError : null
     };
     setActiveCall(callState);
-
-    let stream = null;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: type === 'video',
-        audio: true
-      });
-    } catch (err) {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      } catch (err2) {}
-    }
-
-    if (stream) {
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-    }
 
     setupPeerConnection(currIncoming.callId, currIncoming.caller._id, stream);
 
@@ -742,17 +798,73 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  const toggleCallVideo = () => {
-    setActiveCall(prev => {
-      if (!prev) return null;
-      const nextOff = !prev.isVideoOff;
+  const toggleCallVideo = async () => {
+    if (!activeCall) return;
+
+    // Check if we already have an active video track in localStream
+    const currentVideoTrack = localStreamRef.current?.getVideoTracks()[0];
+
+    if (currentVideoTrack) {
+      const nextOff = !activeCall.isVideoOff;
+      currentVideoTrack.enabled = !nextOff;
+      setActiveCall(prev => prev ? { ...prev, isVideoOff: nextOff, cameraError: null } : null);
+      return;
+    }
+
+    // If no video track exists yet (e.g. initial request failed or started audio-only)
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setActiveCall(prev => prev ? { ...prev, cameraError: 'Camera access is not supported in this browser environment.' } : null);
+      return;
+    }
+
+    try {
+      const videoStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+        audio: false
+      });
+      const newTrack = videoStream.getVideoTracks()[0];
+      if (!newTrack) return;
+
       if (localStreamRef.current) {
-        localStreamRef.current.getVideoTracks().forEach(t => {
-          t.enabled = !nextOff;
-        });
+        localStreamRef.current.addTrack(newTrack);
+      } else {
+        localStreamRef.current = videoStream;
       }
-      return { ...prev, isVideoOff: nextOff };
-    });
+      setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
+
+      // Attach to RTCPeerConnection if call is active/connected
+      if (peerConnectionRef.current) {
+        const videoSender = peerConnectionRef.current.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (videoSender) {
+          await videoSender.replaceTrack(newTrack);
+        } else {
+          peerConnectionRef.current.addTrack(newTrack, localStreamRef.current);
+          try {
+            const offer = await peerConnectionRef.current.createOffer();
+            await peerConnectionRef.current.setLocalDescription(offer);
+            if (activeCall.partner?._id) {
+              socketService.sendCallSignal({
+                callId: activeCall.callId,
+                to: activeCall.partner._id,
+                signal: { type: 'offer', sdp: peerConnectionRef.current.localDescription }
+              });
+            }
+          } catch (e) {
+            console.warn('[Call] Offer renegotiation failed:', e);
+          }
+        }
+      }
+
+      setActiveCall(prev => prev ? { ...prev, isVideoOff: false, cameraError: null } : null);
+    } catch (err) {
+      console.warn('[Call] Failed to turn on camera dynamically:', err);
+      const msg = err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError'
+        ? 'Camera permission denied. Click the camera/lock icon in your browser address bar to allow camera access.'
+        : err.name === 'NotReadableError' || err.name === 'TrackStartError'
+        ? 'Camera is in use by another app (e.g. Zoom, Teams, or another tab).'
+        : `Could not access camera: ${err.message}`;
+      setActiveCall(prev => prev ? { ...prev, cameraError: msg } : null);
+    }
   };
 
   const toggleScreenShare = async () => {

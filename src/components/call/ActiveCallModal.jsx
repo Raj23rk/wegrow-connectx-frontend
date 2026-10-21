@@ -14,7 +14,8 @@ import {
   VolumeX,
   ShieldCheck,
   Building2,
-  Users
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 
 export const ActiveCallModal = () => {
@@ -140,6 +141,22 @@ export const ActiveCallModal = () => {
 
         {/* Main Stage View */}
         <div className="flex-1 bg-gradient-to-b from-[#18181B] to-[#0F0F12] relative overflow-hidden flex items-center justify-center p-4">
+          {/* Camera Access Warning Banner */}
+          {activeCall.cameraError && !isEnded && !isDeclined && !isBusy && (
+            <div className="absolute top-3 left-4 right-4 z-40 bg-amber-500 text-black px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 text-xs font-semibold animate-pop">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-950" />
+                <span className="truncate">{activeCall.cameraError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={toggleCallVideo}
+                className="px-3 py-1 bg-black text-white hover:bg-neutral-800 rounded-xl font-bold flex-shrink-0 text-xs transition-all cursor-pointer"
+              >
+                Allow Camera
+              </button>
+            </div>
+          )}
           {/* STATE 1: Calling / Ringing */}
           {isCalling && (
             <div className="flex flex-col items-center justify-center text-center max-w-sm">
@@ -238,7 +255,7 @@ export const ActiveCallModal = () => {
                 />
 
                 {activeCall.isVideoOff && (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#25252B] text-white">
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#25252B] text-white p-2 text-center">
                     <div
                       className="w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center shadow-md mb-1"
                       style={{ backgroundColor: user?.color || '#5B5FC7' }}
@@ -246,6 +263,15 @@ export const ActiveCallModal = () => {
                       {user?.name ? user.name.substring(0, 2).toUpperCase() : 'ME'}
                     </div>
                     <span className="text-[10px] text-gray-400 font-medium">Camera Off</span>
+                    {activeCall.cameraError && (
+                      <button
+                        type="button"
+                        onClick={toggleCallVideo}
+                        className="mt-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[9px] font-bold cursor-pointer"
+                      >
+                        Grant Access
+                      </button>
+                    )}
                   </div>
                 )}
 
