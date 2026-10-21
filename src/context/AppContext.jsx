@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import { socketService } from '../services/socket';
-import { callAudio } from '../services/callAudio';
+import { callAudio, RINGTONE_LIST } from '../services/callAudio';
 import { useAuth } from './AuthContext';
 
 const AppContext = createContext(null);
@@ -43,6 +43,27 @@ export const AppProvider = ({ children }) => {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isRingtoneMuted, setIsRingtoneMuted] = useState(false);
+  const [currentRingtone, setCurrentRingtoneState] = useState(() => callAudio.getRingtone());
+  const [ringtoneVolume, setRingtoneVolumeState] = useState(() => callAudio.getVolume());
+  const [isRingtoneModalOpen, setIsRingtoneModalOpen] = useState(false);
+
+  const setRingtone = (ringtoneId) => {
+    callAudio.setRingtone(ringtoneId);
+    setCurrentRingtoneState(ringtoneId);
+  };
+
+  const setRingtoneVolume = (vol) => {
+    callAudio.setVolume(vol);
+    setRingtoneVolumeState(vol);
+  };
+
+  const previewRingtone = (ringtoneId) => {
+    callAudio.previewRingtone(ringtoneId);
+  };
+
+  const stopPreviewRingtone = () => {
+    callAudio.stopPreview();
+  };
 
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
@@ -1106,7 +1127,17 @@ export const AppProvider = ({ children }) => {
         toggleCallAudio,
         toggleCallVideo,
         toggleScreenShare,
-        toggleRingtoneMute
+        toggleRingtoneMute,
+        // Ringtone & Audio Customization
+        currentRingtone,
+        setRingtone,
+        ringtoneVolume,
+        setRingtoneVolume,
+        previewRingtone,
+        stopPreviewRingtone,
+        isRingtoneModalOpen,
+        setIsRingtoneModalOpen,
+        RINGTONE_LIST
       }}
     >
       {children}

@@ -1,5 +1,35 @@
-// Microsoft Teams Calling Audio Synthesizer (Web Audio API)
-// Provides authentic Teams incoming ringtone, outgoing ringback tone, connection, and hangup sounds
+// Microsoft Teams Calling Audio & Ringtone Service
+// Supports rich MP3 ringtones (Dil Ki Dhadkan Flute, Early Riser) and classic synthesized Teams chime
+
+import fluteRingtone from '../Dil_Ki_Dhadkan_Flute-658726-mobiles24 (1).mp3';
+import earlyRiserRingtone from '../EarlyRiser.mp3';
+
+export const RINGTONE_LIST = [
+  {
+    id: 'flute',
+    name: 'Dil Ki Dhadkan (Flute)',
+    tag: 'Bollywood Flute • High Volume',
+    description: 'Soulful Bollywood flute melody, clear and loud',
+    src: fluteRingtone || '/sounds/Dil_Ki_Dhadkan_Flute.mp3',
+    type: 'audio'
+  },
+  {
+    id: 'early_riser',
+    name: 'Early Riser',
+    tag: 'Acoustic Marimba • High Volume',
+    description: 'Energetic acoustic bell melody with crisp rhythm',
+    src: earlyRiserRingtone || '/sounds/EarlyRiser.mp3',
+    type: 'audio'
+  },
+  {
+    id: 'teams_classic',
+    name: 'Microsoft Teams Classic',
+    tag: 'Authentic Teams Chime',
+    description: 'Original Teams synthesized marimba signature',
+    src: null,
+    type: 'synth'
+  }
+];
 
 class CallAudioService {
   constructor() {
@@ -7,6 +37,14 @@ class CallAudioService {
     this.ringInterval = null;
     this.ringbackInterval = null;
     this.unlocked = false;
+    this.audioElement = null;
+    this.previewAudio = null;
+    this.currentRingtone = typeof localStorage !== 'undefined'
+      ? (localStorage.getItem('connectx_ringtone') || 'flute')
+      : 'flute';
+    this.volume = typeof localStorage !== 'undefined'
+      ? parseFloat(localStorage.getItem('connectx_ringtone_volume') || '1.0')
+      : 1.0;
   }
 
   getAudioContext() {
@@ -34,8 +72,46 @@ class CallAudioService {
     }
   }
 
+  getRingtone() {
+    return this.currentRingtone;
+  }
+
+  setRingtone(id) {
+    this.currentRingtone = id;
+    try {
+      localStorage.setItem('connectx_ringtone', id);
+    } catch (e) {}
+
+    // If currently ringing on an incoming call, smoothly switch ringtone in real-time
+    if (this.isRinging()) {
+      this.playIncomingRingtone(id);
+    }
+  }
+
+  getVolume() {
+    return this.volume;
+  }
+
+  setVolume(vol) {
+    this.volume = Math.min(1.0, Math.max(0, vol));
+    try {
+      localStorage.setItem('connectx_ringtone_volume', String(this.volume));
+    } catch (e) {}
+
+    if (this.audioElement) {
+      this.audioElement.volume = this.volume;
+    }
+    if (this.previewAudio) {
+      this.previewAudio.volume = this.volume;
+    }
+  }
+
+  isRinging() {
+    return !!(this.ringInterval || (this.audioElement && !this.audioElement.paused));
+  }
+
   // Play a single marimba/bell note with rich harmonic profile (Teams sound signature)
-  playTeamsNote(freq, startTime, duration = 0.16, volume = 0.22) {
+  playTeamsNote(freq, startTime, duration = 0.16, volume = 0.45) {
     const ctx = this.getAudioContext();
     if (!ctx) return;
 
@@ -53,14 +129,14 @@ class CallAudioService {
       osc2.frequency.setValueAtTime(freq * 2, startTime);
 
       const harmonicGain = ctx.createGain();
-      harmonicGain.gain.setValueAtTime(0.2, startTime);
+      harmonicGain.gain.setValueAtTime(0.25, startTime);
       osc2.connect(harmonicGain);
       harmonicGain.connect(masterGain);
 
       osc1.connect(masterGain);
       masterGain.connect(ctx.destination);
 
-      // Sharp attack, gentle sustain, natural exponential decay
+      // High volume attack, gentle sustain, natural exponential decay
       masterGain.gain.setValueAtTime(0.0001, startTime);
       masterGain.gain.linearRampToValueAtTime(volume, startTime + 0.012);
       masterGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
@@ -75,11 +151,11 @@ class CallAudioService {
   }
 
   // Plays one phrase of Microsoft Teams incoming call ringtone
-  // Notes: C5 (523.25), D#5 (622.25), F5 (698.46), G5 (783.99), G#5 (830.61)
-  playTeamsPhrase() {
+  playTeamsPhrase(volMultiplier = 1.0) {
     const ctx = this.getAudioContext();
     if (!ctx) return;
     const now = ctx.currentTime + 0.04;
+    const highVol = 0.45 * Math.min(1.0, Math.max(0.1, volMultiplier));
 
     const melody = [
       { f: 523.25, t: 0.00, d: 0.14 }, // C5
@@ -99,26 +175,101 @@ class CallAudioService {
     ];
 
     melody.forEach(n => {
-      this.playTeamsNote(n.f, now + n.t, n.d);
+      this.playTeamsNote(n.f, now + n.t, n.d, highVol);
     });
   }
 
   // Start continuous incoming call ringtone
-  playIncomingRingtone() {
-    this.stopAll();
-    const ctx = this.getAudioContext();
-    if (!ctx) return;
+  playIncomingRingtone(ringtoneId = null) {
+    this.stopIncomingRingtone();
+    this.stopPreview();
 
-    this.playTeamsPhrase();
-    this.ringInterval = setInterval(() => {
-      this.playTeamsPhrase();
-    }, 3600);
+    const id = ringtoneId || this.currentRingtone || 'flute';
+    const ringtone = RINGTONE_LIST.find(r => r.id === id) || RINGTONE_LIST[0];
+
+    // If Teams Classic synthesizer
+    if (ringtone.type === 'synth') {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+
+      this.playTeamsPhrase(this.volume);
+      this.ringInterval = setInterval(() => {
+        this.playTeamsPhrase(this.volume);
+      }, 3600);
+      return;
+    }
+
+    // Play MP3 audio ringtone at High Volume
+    try {
+      if (!this.audioElement) {
+        this.audioElement = new Audio();
+      }
+      this.audioElement.src = ringtone.src;
+      this.audioElement.loop = true;
+      this.audioElement.volume = Math.min(1.0, Math.max(0.1, this.volume));
+
+      const playPromise = this.audioElement.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('[CallAudio] HTML5 Audio autoplay failed, falling back to synth:', err.message);
+          this.playTeamsPhrase(this.volume);
+          this.ringInterval = setInterval(() => {
+            this.playTeamsPhrase(this.volume);
+          }, 3600);
+        });
+      }
+    } catch (err) {
+      console.warn('[CallAudio] Error in audio playback:', err);
+    }
   }
 
   stopIncomingRingtone() {
     if (this.ringInterval) {
       clearInterval(this.ringInterval);
       this.ringInterval = null;
+    }
+    if (this.audioElement) {
+      try {
+        this.audioElement.pause();
+        this.audioElement.currentTime = 0;
+      } catch (e) {}
+    }
+  }
+
+  // Preview a ringtone in settings
+  previewRingtone(ringtoneId) {
+    this.stopPreview();
+    const ringtone = RINGTONE_LIST.find(r => r.id === ringtoneId) || RINGTONE_LIST[0];
+
+    if (ringtone.type === 'synth') {
+      const ctx = this.getAudioContext();
+      if (ctx) {
+        this.playTeamsPhrase(this.volume);
+      }
+      return;
+    }
+
+    try {
+      if (!this.previewAudio) {
+        this.previewAudio = new Audio();
+      }
+      this.previewAudio.src = ringtone.src;
+      this.previewAudio.currentTime = 0;
+      this.previewAudio.volume = Math.min(1.0, Math.max(0.1, this.volume));
+      this.previewAudio.play().catch(e => {
+        console.warn('[CallAudio] Preview play error:', e);
+      });
+    } catch (e) {
+      console.warn('[CallAudio] Error starting preview:', e);
+    }
+  }
+
+  stopPreview() {
+    if (this.previewAudio) {
+      try {
+        this.previewAudio.pause();
+        this.previewAudio.currentTime = 0;
+      } catch (e) {}
     }
   }
 
@@ -145,10 +296,10 @@ class CallAudioService {
         osc2.connect(gain);
         gain.connect(ctx.destination);
 
-        // 1.2s pulse
+        // 1.2s pulse with high volume
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(0.07, now + 0.06);
-        gain.gain.setValueAtTime(0.07, now + 1.15);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.06);
+        gain.gain.setValueAtTime(0.12, now + 1.15);
         gain.gain.linearRampToValueAtTime(0.0001, now + 1.25);
 
         osc1.start(now);
@@ -177,8 +328,8 @@ class CallAudioService {
     const ctx = this.getAudioContext();
     if (!ctx) return;
     const now = ctx.currentTime + 0.04;
-    this.playTeamsNote(523.25, now, 0.12, 0.2); // C5
-    this.playTeamsNote(783.99, now + 0.13, 0.22, 0.22); // G5
+    this.playTeamsNote(523.25, now, 0.12, 0.35); // C5
+    this.playTeamsNote(783.99, now + 0.13, 0.22, 0.38); // G5
   }
 
   // Two soft descending tones when call ends
@@ -187,13 +338,14 @@ class CallAudioService {
     const ctx = this.getAudioContext();
     if (!ctx) return;
     const now = ctx.currentTime + 0.04;
-    this.playTeamsNote(659.25, now, 0.12, 0.18); // E5
-    this.playTeamsNote(440.00, now + 0.14, 0.22, 0.18); // A4
+    this.playTeamsNote(659.25, now, 0.12, 0.30); // E5
+    this.playTeamsNote(440.00, now + 0.14, 0.22, 0.30); // A4
   }
 
   stopAll() {
     this.stopIncomingRingtone();
     this.stopOutgoingRingback();
+    this.stopPreview();
   }
 }
 

@@ -18,6 +18,7 @@ import { NewChannelModal } from '../common/NewChannelModal';
 import { NewChatModal } from '../common/NewChatModal';
 import { IncomingCallModal } from '../call/IncomingCallModal';
 import { ActiveCallModal } from '../call/ActiveCallModal';
+import { RingtoneModal } from '../common/RingtoneModal';
 
 export const Shell = () => {
   const { currentApp, isMobileChatOpen, isMobileChannelOpen } = useApp();
@@ -78,6 +79,7 @@ export const Shell = () => {
       <NewChatModal />
       <IncomingCallModal />
       <ActiveCallModal />
+      <RingtoneModal />
     </div>
   );
 };

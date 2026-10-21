@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import { Search, Sun, Moon, LogOut, Check, ChevronDown, User, ShieldCheck } from 'lucide-react';
+import { Search, Sun, Moon, LogOut, Check, ChevronDown, User, ShieldCheck, Music } from 'lucide-react';
 
 import logoImg from '../../images/wegrow&Bschool.webp';
 
@@ -16,7 +16,7 @@ const STATUS_OPTIONS = [
 
 export const TopBar = () => {
   const { user, logout, updateStatus } = useAuth();
-  const { theme, toggleTheme, currentBrand, setIsSearchOpen } = useApp();
+  const { theme, toggleTheme, currentBrand, setIsSearchOpen, setIsRingtoneModalOpen, currentRingtone } = useApp();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [customMsg, setCustomMsg] = useState(user?.statusMessage || '');
   const menuRef = useRef(null);
@@ -202,6 +202,26 @@ export const TopBar = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Ringtone Settings */}
+              <div className="py-2 border-b border-gray-100 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    setIsRingtoneModalOpen(true);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-xl font-bold transition-all text-xs cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-[#5B5FC7]" />
+                    <span>Call Ringtone & Audio</span>
+                  </div>
+                  <span className="text-[10px] text-indigo-400 capitalize bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md font-bold">
+                    {currentRingtone === 'flute' ? 'Flute' : currentRingtone === 'early_riser' ? 'Early Riser' : 'Teams'}
+                  </span>
+                </button>
               </div>
 
               {/* Sign out */}
