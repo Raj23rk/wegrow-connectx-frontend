@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { api } from '../../services/api';
+import { api, getFileUrl } from '../../services/api';
 import {
   FolderGit2, Search, Upload, FileText, FileCode, Image, FileArchive,
   Download, Filter, Check, Eye
@@ -187,7 +187,7 @@ export const FilesView = () => {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <a
-                        href={file.url}
+                        href={getFileUrl(file.url)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold"

@@ -1,4 +1,17 @@
-const API_BASE = '/api';
+const rawBackendUrl = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+export const BACKEND_URL = rawBackendUrl ? rawBackendUrl.replace(/\/api$/, '') : '';
+export const API_BASE = rawBackendUrl
+  ? (rawBackendUrl.endsWith('/api') ? rawBackendUrl : `${rawBackendUrl}/api`)
+  : '/api';
+
+export const getFileUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  if (BACKEND_URL) {
+    return `${BACKEND_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  }
+  return path;
+};
 
 export const getToken = () => localStorage.getItem('connectx_token');
 export const setToken = (token) => localStorage.setItem('connectx_token', token);

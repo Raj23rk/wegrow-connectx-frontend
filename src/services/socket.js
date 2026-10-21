@@ -1,5 +1,8 @@
 import { io } from 'socket.io-client';
 
+const rawBackendUrl = (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+const SOCKET_URL = rawBackendUrl ? rawBackendUrl.replace(/\/api$/, '') : '/';
+
 class SocketService {
   constructor() {
     this.socket = null;
@@ -11,7 +14,7 @@ class SocketService {
     if (this.socket && this.userId === userId) return;
 
     this.userId = userId;
-    this.socket = io('/', {
+    this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       autoConnect: true
     });
