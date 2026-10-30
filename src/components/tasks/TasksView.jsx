@@ -9,50 +9,36 @@ import {
   Laptop,
   Maximize2,
   Minimize2,
-  ShieldCheck,
-  Sparkles,
-  Layers
+  Crown,
+  UserCheck
 } from 'lucide-react';
 
 export const TasksView = () => {
   const { user } = useAuth();
   const { currentBrand } = useApp();
   const iframeRef = useRef(null);
+  const containerRef = useRef(null);
 
-  // Available sources: Production Vercel or Localhost Vite
-  const defaultUrl = import.meta.env.VITE_TASKTOGGLE_URL || 'https://tasktoggle.vercel.app';
-  const localUrl = 'http://localhost:5174';
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const localBase = 'http://localhost:5173';
+  const cloudBase = import.meta.env.VITE_TASKTOGGLE_URL || 'https://tasktoggle.vercel.app';
 
-  const [activeUrl, setActiveUrl] = useState(defaultUrl);
+  const [selectedBase, setSelectedBase] = useState(isLocal ? localBase : cloudBase);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const containerRef = useRef(null);
 
-  // Send user context to TaskToggle once iframe loads
+  // Extract the exact logged-in person identity from ConnectX auth
+  const empId = user?.employeeId || user?.empId || '';
+  const email = user?.email || '';
+  const name = user?.name || '';
+  const role = user?.role || 'staff';
+
+  // Build the personalized embedded URL passing exact person identity
+  const iframeUrl = `${selectedBase.replace(/\/+$/, '')}/?embedded=true&empId=${encodeURIComponent(empId)}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`;
+
   const handleIframeLoad = () => {
     setIsLoading(false);
-    try {
-      if (iframeRef.current && iframeRef.current.contentWindow && user) {
-        iframeRef.current.contentWindow.postMessage(
-          {
-            type: 'CONNECTX_USER_SESSION',
-            payload: {
-              id: user._id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-              department: user.department,
-              branch: user.branch || 'sivakasi 1.0',
-              brand: currentBrand
-            }
-          },
-          '*'
-        );
-      }
-    } catch (e) {
-      console.warn('[TasksView] PostMessage error:', e);
-    }
   };
 
   const handleRefresh = () => {
@@ -61,7 +47,8 @@ export const TasksView = () => {
   };
 
   const handleOpenExternal = () => {
-    window.open(activeUrl, '_blank', 'noopener,noreferrer');
+    const standaloneUrl = `${selectedBase.replace(/\/+$/, '')}/?empId=${encodeURIComponent(empId)}&email=${encodeURIComponent(email)}`;
+    window.open(standaloneUrl, '_blank', 'noopener,noreferrer');
   };
 
   const toggleFullscreen = () => {
@@ -92,117 +79,115 @@ export const TasksView = () => {
       ref={containerRef}
       className="flex-1 flex flex-col h-full w-full bg-white dark:bg-[#1C1C1C] overflow-hidden select-none"
     >
-      {/* Top Utility Header */}
-      <header className="h-12 border-b border-gray-200 dark:border-[#2C2C2C] bg-[#F7F7F8] dark:bg-[#181818] flex items-center justify-between px-3 sm:px-4 flex-none gap-2">
-        {/* Left: Branding & Status */}
+      {/* Top Embedded Status Bar */}
+      <header className="h-11 border-b border-gray-200 dark:border-[#2C2C2C] bg-[#F7F7F8] dark:bg-[#181818] flex items-center justify-between px-3 sm:px-4 flex-none gap-2">
+        {/* Left: Identity Check Badge */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center shadow-xs flex-none">
-            <CheckSquare className="w-4 h-4 stroke-[2.5]" />
+          <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs flex-none">
+            <CheckSquare className="w-3.5 h-3.5 stroke-[2.5]" />
           </div>
-          <div className="flex items-center gap-2 truncate">
-            <h1 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white truncate">
-              TaskToggle
-            </h1>
-            <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Live Operations
+          <div className="flex items-center gap-1.5 truncate text-xs">
+            <span className="font-extrabold text-gray-900 dark:text-white">TaskToggle</span>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <span className="inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40 text-[10px] truncate">
+              {role === 'admin' ? (
+                <Crown className="w-3 h-3 text-amber-500" />
+              ) : (
+                <UserCheck className="w-3 h-3 text-indigo-500" />
+              )}
+              <span className="truncate">Active Personnel: {name} ({empId || 'WG-EMP'})</span>
             </span>
           </div>
         </div>
 
-        {/* Center: Environment Switcher (Cloud vs Local) */}
+        {/* Center: Environment Selector (Localhost 5173 vs Cloud) */}
         <div className="hidden sm:flex items-center bg-gray-200/70 dark:bg-[#252525] p-0.5 rounded-lg text-[11px] font-medium text-gray-600 dark:text-gray-300">
           <button
             type="button"
             onClick={() => {
-              if (activeUrl !== defaultUrl) {
+              if (selectedBase !== localBase) {
                 setIsLoading(true);
-                setActiveUrl(defaultUrl);
+                setSelectedBase(localBase);
               }
             }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${
-              activeUrl === defaultUrl
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
+              selectedBase === localBase
+                ? 'bg-white dark:bg-[#333333] text-gray-900 dark:text-white font-bold shadow-xs'
+                : 'hover:text-gray-900 dark:hover:text-white'
+            }`}
+            title="Local Vite Server (http://localhost:5173)"
+          >
+            <Laptop className="w-3 h-3 text-emerald-500" />
+            <span>Local (5173)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (selectedBase !== cloudBase) {
+                setIsLoading(true);
+                setSelectedBase(cloudBase);
+              }
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
+              selectedBase === cloudBase
                 ? 'bg-white dark:bg-[#333333] text-gray-900 dark:text-white font-bold shadow-xs'
                 : 'hover:text-gray-900 dark:hover:text-white'
             }`}
             title="Production Cloud App"
           >
-            <Globe className="w-3.5 h-3.5 text-blue-500" />
+            <Globe className="w-3 h-3 text-blue-500" />
             <span>Cloud</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (activeUrl !== localUrl) {
-                setIsLoading(true);
-                setActiveUrl(localUrl);
-              }
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${
-              activeUrl === localUrl
-                ? 'bg-white dark:bg-[#333333] text-gray-900 dark:text-white font-bold shadow-xs'
-                : 'hover:text-gray-900 dark:hover:text-white'
-            }`}
-            title="Local Development Port (5174)"
-          >
-            <Laptop className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Local Dev</span>
           </button>
         </div>
 
-        {/* Right: Quick Actions */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          {/* Refresh Frame */}
+        {/* Right: Actions */}
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={handleRefresh}
-            title="Reload TaskToggle"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-all cursor-pointer"
+            title="Reload Tasks"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-all cursor-pointer"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-emerald-500' : ''}`} />
+            <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-indigo-500' : ''}`} />
           </button>
 
-          {/* Fullscreen Toggle */}
           <button
             type="button"
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-all cursor-pointer"
+            className="hidden sm:flex w-7 h-7 rounded-lg items-center justify-center text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-all cursor-pointer"
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
 
-          {/* Open in Separate Tab */}
           <button
             type="button"
             onClick={handleOpenExternal}
-            title="Open TaskToggle in New Tab"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer"
+            title="Open TaskToggle in New Window as Current User"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3 h-3" />
             <span className="hidden sm:inline">Open in Tab</span>
           </button>
         </div>
       </header>
 
-      {/* Main Iframe Canvas */}
+      {/* Embedded Iframe Container */}
       <div className="flex-1 relative w-full h-full bg-gray-50 dark:bg-[#141414] overflow-hidden">
-        {/* Loading Spinner */}
         {isLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-[#1C1C1C]/80 backdrop-blur-xs z-10 transition-opacity">
-            <div className="w-10 h-10 border-3 border-emerald-500/20 border-t-emerald-600 rounded-full animate-spin mb-3"></div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-[#1C1C1C]/80 backdrop-blur-xs z-10">
+            <div className="w-8 h-8 border-3 border-indigo-500/20 border-t-indigo-600 rounded-full animate-spin mb-2.5"></div>
             <div className="text-xs font-bold text-gray-700 dark:text-gray-200">
-              Loading TaskToggle Workspace...
+              Loading {name ? `${name}'s Workspace` : 'TaskToggle'}...
             </div>
-            <div className="text-[11px] text-gray-400 mt-1">Connecting to {activeUrl}</div>
+            <div className="text-[10px] text-gray-400 mt-0.5">Authenticated via ConnectX ID: {empId || 'WG-EMP'}</div>
           </div>
         )}
 
-        {/* Embedded Application Frame */}
         <iframe
-          key={`${activeUrl}-${refreshKey}`}
+          key={`${iframeUrl}-${refreshKey}`}
           ref={iframeRef}
-          src={activeUrl}
+          src={iframeUrl}
           title="TaskToggle Management System"
           onLoad={handleIframeLoad}
           className="w-full h-full border-none"
@@ -213,4 +198,3 @@ export const TasksView = () => {
     </div>
   );
 };
-
