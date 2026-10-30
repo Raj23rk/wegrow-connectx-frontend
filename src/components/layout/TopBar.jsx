@@ -105,6 +105,58 @@ export const TopBar = () => {
       {/* Right Controls: Theme + Profile */}
       <div className="flex items-center gap-2">
         {/* Theme Toggle */}
+        {/* 9-Dot WeGrow Ecosystem Switcher */}
+        <div className="relative" ref={appSwitcherRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAppSwitcherOpen(!isAppSwitcherOpen);
+              setIsProfileMenuOpen(false);
+            }}
+            title="WeGrow Ecosystem Apps"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-[#5B5FC7] dark:text-gray-400 dark:hover:text-[#9EA2FF] hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+
+          {isAppSwitcherOpen && (
+            <div className="absolute right-0 top-10 w-72 bg-white dark:bg-[#282828] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-3.5 z-50 animate-pop text-xs text-gray-800 dark:text-gray-200">
+              <div className="pb-2 border-b border-gray-100 dark:border-gray-700 mb-2.5">
+                <p className="font-extrabold text-xs text-gray-900 dark:text-white">WeGrow Ecosystem</p>
+                <p className="text-[10px] text-gray-400">Signed in as {user?.name} ({user?.employeeId || user?.empId})</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {/* ConnectX (Active) */}
+                <div className="flex flex-col items-center justify-between p-2.5 rounded-xl border-2 border-[#5B5FC7] bg-[#5B5FC7]/10 text-center relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0A2A8C] to-[#FF6A13] flex items-center justify-center text-white font-extrabold text-xs shadow-xs mb-1">
+                    WX
+                  </div>
+                  <span className="font-extrabold text-[11px] text-gray-900 dark:text-white">ConnectX</span>
+                  <span className="text-[9px] font-bold text-[#5B5FC7] dark:text-[#9EA2FF]">● Active</span>
+                </div>
+
+                {/* TaskToggle Portal with Exact User ID */}
+                <a
+                  href={`http://localhost:5173/?empId=${encodeURIComponent(user?.employeeId || user?.empId || '')}&email=${encodeURIComponent(user?.email || '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all text-center cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs mb-1 group-hover:scale-105 transition-transform">
+                    <CheckSquare className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div className="flex items-center gap-1 font-bold text-[11px] text-gray-800 dark:text-gray-200 group-hover:text-indigo-600">
+                    <span>TaskToggle</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-gray-400" />
+                  </div>
+                  <span className="text-[9px] text-gray-400">Launch As You</span>
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={toggleTheme}

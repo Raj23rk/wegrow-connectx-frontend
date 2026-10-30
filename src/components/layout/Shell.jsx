@@ -10,6 +10,7 @@ import { FilesView } from '../files/FilesView';
 import { PeopleView } from '../people/PeopleView';
 import { AdminView } from '../admin/AdminView';
 import { ActivityView } from '../activity/ActivityView';
+import { TasksView } from '../tasks/TasksView';
 
 import { SearchModal } from '../common/SearchModal';
 import { ProfileModal } from '../common/ProfileModal';
@@ -28,6 +29,8 @@ export const Shell = () => {
 
   const renderMainContent = () => {
     switch (currentApp) {
+      case 'tasks':
+        return <TasksView />;
       case 'teams':
         return <ChannelView />;
       case 'chat':
