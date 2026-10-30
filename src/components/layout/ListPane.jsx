@@ -53,7 +53,7 @@ export const ListPane = () => {
   };
 
   // If calendar, files, people, or admin, ListPane is hidden on wide view or gives way
-  if (['calendar', 'files', 'people', 'admin'].includes(currentApp)) {
+  if (['calendar', 'files', 'people', 'admin', 'tasks'].includes(currentApp)) {
     return null;
   }
 

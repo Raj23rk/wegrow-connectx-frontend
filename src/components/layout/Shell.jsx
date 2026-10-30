@@ -20,8 +20,11 @@ import { IncomingCallModal } from '../call/IncomingCallModal';
 import { ActiveCallModal } from '../call/ActiveCallModal';
 import { RingtoneModal } from '../common/RingtoneModal';
 
+import { useAuth } from '../../context/AuthContext';
+
 export const Shell = () => {
   const { currentApp, isMobileChatOpen, isMobileChannelOpen } = useApp();
+  const { user } = useAuth();
 
   const renderMainContent = () => {
     switch (currentApp) {

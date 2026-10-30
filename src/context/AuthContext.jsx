@@ -12,6 +12,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Load initial user session
     const initAuth = async () => {
+      // 1. Check URL for incoming SSO token from TaskToggle
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        if (urlToken) {
+          setToken(urlToken);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } catch (e) {}
+
       const token = getToken();
       if (token) {
         try {

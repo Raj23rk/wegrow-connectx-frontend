@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
-import { Search, Sun, Moon, LogOut, Check, ChevronDown, User, ShieldCheck, Music } from 'lucide-react';
+import { Search, Sun, Moon, LogOut, Check, ChevronDown, User, ShieldCheck, Music, LayoutGrid, CheckSquare, ExternalLink } from 'lucide-react';
 
 import logoImg from '../../images/wegrow&Bschool.webp';
 
@@ -18,6 +18,8 @@ export const TopBar = () => {
   const { user, logout, updateStatus } = useAuth();
   const { theme, toggleTheme, currentBrand, setIsSearchOpen, setIsRingtoneModalOpen, currentRingtone } = useApp();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isAppSwitcherOpen, setIsAppSwitcherOpen] = useState(false);
+  const appSwitcherRef = useRef(null);
   const [customMsg, setCustomMsg] = useState(user?.statusMessage || '');
   const menuRef = useRef(null);
 
@@ -28,6 +30,12 @@ export const TopBar = () => {
         setIsProfileMenuOpen(false);
       }
     };
+    const handleAppClickOutside = (e) => {
+      if (appSwitcherRef.current && !appSwitcherRef.current.contains(e.target)) {
+        setIsAppSwitcherOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleAppClickOutside);
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);

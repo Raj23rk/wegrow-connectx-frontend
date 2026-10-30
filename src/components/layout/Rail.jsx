@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { Bell, MessageSquare, Users2, Calendar, FolderGit2, User, ShieldCheck } from 'lucide-react';
+import { Bell, MessageSquare, Users2, Calendar, FolderGit2, User, ShieldCheck, CheckSquare } from 'lucide-react';
 
 export const Rail = () => {
   const { currentApp, setCurrentApp, unreadActivitiesCount, chats } = useApp();
@@ -16,6 +16,7 @@ export const Rail = () => {
     { id: 'activity', label: 'Activity', icon: Bell, badge: unreadActivitiesCount },
     { id: 'chat', label: 'Chat', icon: MessageSquare, badge: unreadChatsCount },
     { id: 'teams', label: 'Teams', icon: Users2, badge: 0 },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare, badge: 0 },
     { id: 'calendar', label: 'Calendar', icon: Calendar, badge: 0 },
     { id: 'files', label: 'Files', icon: FolderGit2, badge: 0 },
     { id: 'people', label: 'People', icon: User, badge: 0 },
