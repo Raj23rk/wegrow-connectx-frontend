@@ -138,7 +138,7 @@ export const TopBar = () => {
 
                 {/* TaskToggle Portal with Exact User ID */}
                 <a
-                  href={`http://localhost:5173/?empId=${encodeURIComponent(user?.employeeId || user?.empId || '')}&email=${encodeURIComponent(user?.email || '')}`}
+                  href={`${typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5173' : (import.meta.env.VITE_TASKTOGGLE_URL || 'https://tasktoggle.vercel.app')}/?empId=${encodeURIComponent(user?.employeeId || user?.empId || '')}&email=${encodeURIComponent(user?.email || '')}&name=${encodeURIComponent(user?.name || '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex flex-col items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all text-center cursor-pointer"
