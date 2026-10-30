@@ -29,8 +29,6 @@ export const Shell = () => {
 
   const renderMainContent = () => {
     switch (currentApp) {
-      case 'tasks':
-        return <TasksView />;
       case 'teams':
         return <ChannelView />;
       case 'chat':
@@ -73,7 +71,13 @@ export const Shell = () => {
             isMainHiddenOnMobile ? 'hidden md:flex' : 'flex'
           }`}
         >
-          {renderMainContent()}
+          {/* Instant Persistent Tasks Frame (0ms switch, zero reload) */}
+          <div className={`h-full w-full flex-col ${currentApp === 'tasks' ? 'flex' : 'hidden'}`}>
+            <TasksView />
+          </div>
+
+          {/* Standard ConnectX Views */}
+          {currentApp !== 'tasks' && renderMainContent()}
         </main>
       </div>
 
