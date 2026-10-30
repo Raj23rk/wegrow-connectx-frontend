@@ -12,10 +12,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Load initial user session
     const initAuth = async () => {
-      // 1. Check URL for incoming SSO token from TaskToggle
+      // 1. Check URL for incoming SSO token or persona switch from TaskToggle
+      let urlToken = null;
+      let urlEmpId = null;
+      let urlEmail = null;
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('token');
+        urlToken = urlParams.get('token');
+        urlEmpId = urlParams.get('empId');
+        urlEmail = urlParams.get('email');
         if (urlToken) {
           setToken(urlToken);
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -27,8 +32,18 @@ export const AuthProvider = ({ children }) => {
         try {
           const res = await api.getMe();
           if (res.success && res.user) {
-            setUser(res.user);
-            socketService.connect(res.user._id);
+            // Guard: If URL explicitly specifies a different employee ID or email without new token,
+            // prevent opening the wrong staff persona from a stale browser cache
+            const mismatch = (urlEmpId && res.user.employeeId && res.user.employeeId !== urlEmpId) ||
+                             (urlEmail && res.user.email && res.user.email.toLowerCase() !== urlEmail.toLowerCase());
+            if (mismatch && !urlToken) {
+              console.warn('[Auth] Cached session mismatch for requested staff, resetting session');
+              removeToken();
+              setUser(null);
+            } else {
+              setUser(res.user);
+              socketService.connect(res.user._id);
+            }
           }
         } catch (err) {
           console.warn('[Auth] Session expired or invalid:', err.message);
