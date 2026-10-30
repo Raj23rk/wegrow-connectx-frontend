@@ -10,12 +10,13 @@ import {
   Maximize2,
   Minimize2,
   Crown,
-  UserCheck
+  UserCheck,
+  ArrowLeft
 } from 'lucide-react';
 
 export const TasksView = () => {
   const { user } = useAuth();
-  const { currentBrand } = useApp();
+  const { currentBrand, setCurrentApp } = useApp();
   const iframeRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -67,6 +68,17 @@ export const TasksView = () => {
   };
 
   useEffect(() => {
+    const handleMsg = (e) => {
+      if (e.data?.type === 'RETURN_TO_CONNECTX' || e.data?.type === 'NAVIGATE_CONNECTX') {
+        const target = e.data?.app || 'chat';
+        if (setCurrentApp) setCurrentApp(target);
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+  }, [setCurrentApp]);
+
+  useEffect(() => {
     const handleFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
     };
@@ -81,8 +93,19 @@ export const TasksView = () => {
     >
       {/* Top Embedded Status Bar */}
       <header className="h-11 border-b border-gray-200 dark:border-[#2C2C2C] bg-[#F7F7F8] dark:bg-[#181818] flex items-center justify-between px-3 sm:px-4 flex-none gap-2">
-        {/* Left: Identity Check Badge */}
+        {/* Left: Back to ConnectX Button & Identity Check Badge */}
         <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => setCurrentApp && setCurrentApp('chat')}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#5B5FC7] hover:bg-[#4A4EB8] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex-none active:scale-95"
+            title="Return to ConnectX Chat & Channels"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Back to ConnectX</span>
+            <span className="sm:hidden">Back</span>
+          </button>
+
           <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs flex-none">
             <CheckSquare className="w-3.5 h-3.5 stroke-[2.5]" />
           </div>
